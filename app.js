@@ -247,6 +247,21 @@ async function openVideo(videoId) {
     playerChannelAvatar.src = '';
 
     try {
+        if (YT_API_KEY) {
+            // Fetch metadata from YouTube API so the UI populates immediately
+            fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoId}&key=${YT_API_KEY}`)
+                .then(res => res.json())
+                .then(ytData => {
+                    if (ytData.items && ytData.items.length > 0) {
+                        const item = ytData.items[0];
+                        playerTitle.textContent = item.snippet.title;
+                        playerChannelName.textContent = item.snippet.channelTitle;
+                        playerViews.textContent = `${formatViews(item.statistics.viewCount)} views`;
+                        playerDescription.textContent = item.snippet.description || '';
+                    }
+                }).catch(console.error);
+        }
+
         if (!API_BASE && !YT_API_KEY) await findWorkingInstance();
         if (YT_API_KEY && !API_BASE) API_BASE = API_INSTANCES[0]; 
 
@@ -273,11 +288,16 @@ async function openVideo(videoId) {
             nativePlayer.src = data.hls;
         }
 
-        playerTitle.textContent = data.title;
-        playerChannelName.textContent = data.uploader;
-        playerViews.textContent = `${formatViews(data.views)} views`;
-        playerDescription.textContent = data.description || '';
-        playerChannelAvatar.src = data.uploaderAvatar || 'https://via.placeholder.com/48';
+        // Only update UI from Piped if YouTube API didn't already do it
+        if (!YT_API_KEY) {
+            playerTitle.textContent = data.title;
+            playerChannelName.textContent = data.uploader;
+            playerViews.textContent = `${formatViews(data.views)} views`;
+            playerDescription.textContent = data.description || '';
+            playerChannelAvatar.src = data.uploaderAvatar || 'https://via.placeholder.com/48';
+        } else if (data.uploaderAvatar) {
+            playerChannelAvatar.src = data.uploaderAvatar;
+        }
         
         // Setup Media Session for Background Play (iOS/Android Lock Screen)
         if ('mediaSession' in navigator) {
