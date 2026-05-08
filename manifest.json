@@ -1,0 +1,16 @@
+{
+  "name": "MyTube Premium",
+  "short_name": "MyTube",
+  "description": "Ad-free, premium YouTube experience",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

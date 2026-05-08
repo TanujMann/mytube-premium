@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MyTube - Ad-Free Premium</title>
+    
+    <!-- PWA / iOS Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#09090b">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fa-solid fa-play-circle gradient-text"></i>
+            <span>MyTube</span>
+        </div>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search for ad-free videos...">
+            <button id="searchBtn"><i class="fa-solid fa-search"></i></button>
+        </div>
+        <div class="user-profile">
+            <div class="avatar">U</div>
+        </div>
+    </nav>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <a href="#" class="nav-item active" id="navHome">
+                <i class="fa-solid fa-house"></i> Home
+            </a>
+            <a href="#" class="nav-item" id="navTrending">
+                <i class="fa-solid fa-fire"></i> Trending
+            </a>
+        </aside>
+
+        <main class="content">
+            <h2 id="sectionTitle">Trending Now</h2>
+            <div id="loader" class="loader" style="display: none;"></div>
+            <div class="video-grid" id="videoGrid">
+                <!-- Videos will be injected here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Video Player Overlay -->
+    <div class="player-overlay" id="playerOverlay">
+        <div class="player-container">
+            <div class="player-actions">
+                <button class="action-btn" id="pipBtn" title="Picture in Picture"><i class="fa-solid fa-square-up-right"></i></button>
+                <button class="action-btn close-player" id="closePlayer"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="video-wrapper">
+                <video id="nativePlayer" controls autoplay playsinline></video>
+                <div class="player-loader" id="playerLoader">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i> Loading High Quality Stream...
+                </div>
+            </div>
+            <div class="video-info">
+                <h2 id="playerTitle">Video Title</h2>
+                <div class="channel-info">
+                    <img id="playerChannelAvatar" src="" alt="Channel">
+                    <span id="playerChannelName">Channel Name</span>
+                    <span id="playerViews" class="views">0 views</span>
+                </div>
+                <div class="description-box">
+                    <p id="playerDescription"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="#" class="bottom-nav-item active" id="mobileNavHome">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </a>
+        <a href="#" class="bottom-nav-item" id="mobileNavTrending">
+            <i class="fa-solid fa-fire"></i>
+            <span>Trending</span>
+        </a>
+    </nav>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(err => console.log('SW failed', err));
+            });
+        }
+    </script>
+</body>
+</html>
