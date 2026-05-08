@@ -4,15 +4,22 @@ const API_INSTANCES = [
     'https://pipedapi.adminforge.de',
     'https://pipedapi.kavin.rocks'
 ];
-let API_BASE = API_INSTANCES[0]; // Default
+let API_BASE = null; // Default to null so it finds a working instance
+
+// Fetch through CORS proxy to prevent GitHub Pages blocks
+async function fetchApi(path) {
+    const targetUrl = encodeURIComponent(`${API_BASE}${path}`);
+    return await fetch(`https://corsproxy.io/?${targetUrl}`);
+}
 
 // Find a working instance on load
 async function findWorkingInstance() {
     for (const url of API_INSTANCES) {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000);
-            const response = await fetch(`${url}/trending?region=US`, { signal: controller.signal });
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
+            const testUrl = `https://corsproxy.io/?${encodeURIComponent(url + '/trending?region=US')}`;
+            const response = await fetch(testUrl, { signal: controller.signal });
             clearTimeout(timeoutId);
             if (response.ok) {
                 API_BASE = url;
@@ -20,7 +27,7 @@ async function findWorkingInstance() {
                 return;
             }
         } catch (e) {
-            console.log(`Instance ${url} failed, trying next...`);
+            console.log(`Instance ${url} failed via proxy, trying next...`);
         }
     }
 }
@@ -78,8 +85,8 @@ async function loadTrending() {
     loader.style.display = 'block';
 
     try {
-        await findWorkingInstance();
-        const response = await fetch(`${API_BASE}/trending?region=US`);
+        if (!API_BASE) await findWorkingInstance();
+        const response = await fetchApi('/trending?region=US');
         const data = await response.json();
         renderVideos(data);
     } catch (err) {
@@ -99,7 +106,8 @@ async function searchVideos(query) {
     loader.style.display = 'block';
 
     try {
-        const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}&filter=all`);
+        if (!API_BASE) await findWorkingInstance();
+        const response = await fetchApi(`/search?q=${encodeURIComponent(query)}&filter=all`);
         const data = await response.json();
         // search endpoint returns { items: [...] }
         renderVideos(data.items);
@@ -163,7 +171,8 @@ async function openVideo(videoId) {
     nativePlayer.src = '';
 
     try {
-        const response = await fetch(`${API_BASE}/streams/${videoId}`);
+        if (!API_BASE) await findWorkingInstance();
+        const response = await fetchApi(`/streams/${videoId}`);
         const data = await response.json();
 
         if (data.error) throw new Error(data.error);
