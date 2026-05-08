@@ -251,6 +251,9 @@ async function openVideo(videoId) {
     playerViews.textContent = '';
     playerDescription.textContent = '';
     playerChannelAvatar.src = '';
+    
+    // Reset description to collapsed state
+    document.getElementById('descBox').classList.add('collapsed');
 
     try {
         if (YT_API_KEY) {

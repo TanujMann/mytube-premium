@@ -92,8 +92,9 @@
                     <span id="playerChannelName">Channel Name</span>
                     <span id="playerViews" class="views">0 views</span>
                 </div>
-                <div class="description-box">
-                    <p class="description-box" id="playerDescription"></p>
+                <div class="description-box collapsed" id="descBox" onclick="this.classList.toggle('collapsed')">
+                    <p id="playerDescription"></p>
+                    <span class="show-more-text">...more</span>
                 </div>
                 
                 <!-- Related Videos Section -->
