@@ -23,7 +23,10 @@
             <span>MyTube</span>
         </div>
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search for ad-free videos...">
+            <div class="search-input-wrapper">
+                <input type="text" id="searchInput" placeholder="Search for ad-free videos..." autocomplete="off">
+                <div class="search-suggestions" id="searchSuggestions"></div>
+            </div>
             <button id="searchBtn"><i class="fa-solid fa-search"></i></button>
         </div>
         <div class="user-profile">

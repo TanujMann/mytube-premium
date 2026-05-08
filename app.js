@@ -38,6 +38,7 @@ const loader = document.getElementById('loader');
 const sectionTitle = document.getElementById('sectionTitle');
 const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
+const searchSuggestions = document.getElementById('searchSuggestions');
 const navHome = document.getElementById('navHome');
 const navTrending = document.getElementById('navTrending');
 const mobileNavHome = document.getElementById('mobileNavHome');
@@ -278,10 +279,64 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
-// Event Listeners
-searchBtn.addEventListener('click', () => searchVideos(searchInput.value));
+// Live Search Suggestions
+let suggestionTimeout;
+searchInput.addEventListener('input', (e) => {
+    clearTimeout(suggestionTimeout);
+    const query = e.target.value.trim();
+    
+    if (!query) {
+        searchSuggestions.style.display = 'none';
+        return;
+    }
+
+    suggestionTimeout = setTimeout(async () => {
+        try {
+            // Using official YouTube suggest endpoint (supports CORS natively)
+            const res = await fetch(`https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            const suggestions = data[1] || [];
+            
+            if (suggestions.length > 0) {
+                searchSuggestions.innerHTML = suggestions.map(text => 
+                    `<div class="search-suggestion-item" onclick="applySuggestion('${text.replace(/'/g, "\\'")}')">
+                        <i class="fa-solid fa-magnifying-glass"></i> ${text}
+                    </div>`
+                ).join('');
+                searchSuggestions.style.display = 'flex';
+            } else {
+                searchSuggestions.style.display = 'none';
+            }
+        } catch (err) {
+            console.error("Suggestions error", err);
+        }
+    }, 200);
+});
+
+// Apply clicked suggestion
+window.applySuggestion = function(text) {
+    searchInput.value = text;
+    searchSuggestions.style.display = 'none';
+    searchVideos(text);
+};
+
+// Hide suggestions when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-container')) {
+        searchSuggestions.style.display = 'none';
+    }
+});
+
+searchBtn.addEventListener('click', () => {
+    searchSuggestions.style.display = 'none';
+    searchVideos(searchInput.value);
+});
+
 searchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') searchVideos(searchInput.value);
+    if (e.key === 'Enter') {
+        searchSuggestions.style.display = 'none';
+        searchVideos(searchInput.value);
+    }
 });
 
 navHome.addEventListener('click', (e) => {
