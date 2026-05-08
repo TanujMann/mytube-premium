@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mytube-v5';
+const CACHE_NAME = 'mytube-v6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -32,7 +32,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   // We don't want to cache API responses heavily or at all for now, just static assets
-  if (event.request.url.includes('pipedapi')) {
+  if (event.request.url.includes('pipedapi') || event.request.url.includes('googleapis')) {
     return;
   }
   

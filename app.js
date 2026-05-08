@@ -114,7 +114,7 @@ async function loadTrending() {
 
     try {
         if (YT_API_KEY) {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=US&maxResults=30&key=${YT_API_KEY}`);
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=IN&maxResults=30&key=${YT_API_KEY}`, { cache: 'no-store' });
             const data = await res.json();
             if (data.error) throw new Error(data.error.message);
             const formatted = data.items.map(item => ({
@@ -151,7 +151,7 @@ async function searchVideos(query) {
 
     try {
         if (YT_API_KEY) {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=30&key=${YT_API_KEY}`);
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=30&key=${YT_API_KEY}`, { cache: 'no-store' });
             const data = await res.json();
             if (data.error) throw new Error(data.error.message);
             const formatted = data.items.map(item => ({
