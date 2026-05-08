@@ -565,9 +565,11 @@ h2#sectionTitle {
         max-height: 100vh;
         border-radius: 0;
         transform: translateY(100%);
+        padding-top: env(safe-area-inset-top, 30px);
+        background: black;
     }
     .player-actions {
-        top: calc(1.5rem + env(safe-area-inset-top, 20px));
+        top: calc(1rem + env(safe-area-inset-top, 30px));
         right: 1rem;
     }
     .bottom-nav {

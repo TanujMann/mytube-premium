@@ -258,6 +258,9 @@ async function openVideo(videoId) {
                         playerChannelName.textContent = item.snippet.channelTitle;
                         playerViews.textContent = `${formatViews(item.statistics.viewCount)} views`;
                         playerDescription.textContent = item.snippet.description || '';
+                        
+                        // Fetch related videos using title keyword
+                        fetchRelatedVideos(item.snippet.title);
                     }
                 }).catch(console.error);
         }
@@ -295,6 +298,11 @@ async function openVideo(videoId) {
             playerViews.textContent = `${formatViews(data.views)} views`;
             playerDescription.textContent = data.description || '';
             playerChannelAvatar.src = data.uploaderAvatar || 'https://via.placeholder.com/48';
+            
+            // If Piped works, render related streams directly
+            if (data.relatedStreams && data.relatedStreams.length > 0) {
+                renderRelatedVideos(data.relatedStreams);
+            }
         } else if (data.uploaderAvatar) {
             playerChannelAvatar.src = data.uploaderAvatar;
         }
@@ -330,6 +338,67 @@ async function openVideo(videoId) {
     } finally {
         playerLoader.style.display = 'none';
     }
+}
+
+// Fetch Related Videos via YouTube API keyword search
+async function fetchRelatedVideos(title) {
+    if (!YT_API_KEY) return;
+    const relatedContainer = document.getElementById('relatedVideos');
+    relatedContainer.innerHTML = '<p>Loading related videos...</p>';
+    
+    // Take first 3-4 words of title to find similar videos
+    const keyword = encodeURIComponent(title.split(' ').slice(0, 4).join(' '));
+    try {
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${keyword}&type=video&maxResults=15&key=${YT_API_KEY}`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+        
+        const formatted = data.items.map(item => ({
+            url: `/watch?v=${item.id.videoId}`,
+            title: item.snippet.title,
+            thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
+            uploaderName: item.snippet.channelTitle,
+            views: 0,
+            duration: 0
+        }));
+        renderRelatedVideos(formatted);
+    } catch (err) {
+        relatedContainer.innerHTML = '<p>Could not load related videos.</p>';
+    }
+}
+
+// Render Related Videos in Player
+function renderRelatedVideos(videos) {
+    const relatedContainer = document.getElementById('relatedVideos');
+    if (!videos || videos.length === 0) {
+        relatedContainer.innerHTML = '<p>No related videos found.</p>';
+        return;
+    }
+
+    const html = videos.map(video => {
+        // Handle both Piped and YouTube API formats
+        const thumbnail = video.thumbnail || (video.thumbnails && video.thumbnails[0]?.url) || '';
+        const duration = video.duration ? formatTime(video.duration) : '';
+        const views = video.views ? `${formatViews(video.views)} views` : '';
+        const time = video.uploadedDate ? formatRelativeDate(video.uploadedDate) : '';
+        const vidId = video.url.includes('?v=') ? video.url.split('?v=')[1] : video.url.split('/').pop();
+        
+        return `
+            <div class="video-card" onclick="openVideo('${vidId}')" style="display: flex; gap: 10px; margin-bottom: 10px; background: transparent; border: none; box-shadow: none;">
+                <div class="thumbnail" style="width: 160px; flex-shrink: 0; border-radius: 8px;">
+                    <img src="${thumbnail}" alt="${video.title}" loading="lazy">
+                    <span class="duration">${duration}</span>
+                </div>
+                <div class="video-details" style="padding: 0; display: flex; flex-direction: column; justify-content: center;">
+                    <h3 class="video-title" style="font-size: 0.9rem; -webkit-line-clamp: 2;" title="${video.title}">${video.title}</h3>
+                    <p class="channel-name" style="font-size: 0.8rem;">${video.uploaderName}</p>
+                    <p class="video-stats" style="font-size: 0.75rem;">${views}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    relatedContainer.innerHTML = html;
 }
 
 // Close Video Player
