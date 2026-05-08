@@ -232,11 +232,16 @@ async function openVideo(videoId) {
 
     playerOverlay.classList.add('active');
     
-    // Reset players
+    // Reset players and unlock audio context for iOS
     iframePlayer.style.display = 'none';
     nativePlayer.style.display = 'block';
     iframePlayer.src = '';
     nativePlayer.src = '';
+    
+    // iOS Autoplay unlock trick (must be synchronous with click)
+    nativePlayer.play().catch(() => {});
+    nativePlayer.pause();
+    
     playerLoader.style.display = 'flex';
     
     // Reset info
@@ -334,7 +339,8 @@ async function openVideo(videoId) {
         // Fallback to Iframe Player
         nativePlayer.style.display = 'none';
         iframePlayer.style.display = 'block';
-        iframePlayer.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        // Add playsinline=1 so iOS allows autoplay in the iframe
+        iframePlayer.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1`;
     } finally {
         playerLoader.style.display = 'none';
     }
