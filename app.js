@@ -268,8 +268,8 @@ async function openVideo(videoId) {
                         playerViews.textContent = `${formatViews(item.statistics.viewCount)} views`;
                         playerDescription.textContent = item.snippet.description || '';
                         
-                        // Fetch related videos using title keyword
-                        fetchRelatedVideos(item.snippet.title);
+                        // Fetch related videos using full item for tags/channel
+                        fetchRelatedVideos(item);
                     }
                 }).catch(console.error);
         }
@@ -352,26 +352,41 @@ async function openVideo(videoId) {
 }
 
 // Fetch Related Videos via YouTube API keyword search
-async function fetchRelatedVideos(title) {
+async function fetchRelatedVideos(videoItem) {
     if (!YT_API_KEY) return;
     const relatedContainer = document.getElementById('relatedVideos');
     relatedContainer.innerHTML = '<p>Loading related videos...</p>';
     
-    // Take first 3-4 words of title to find similar videos
-    const keyword = encodeURIComponent(title.split(' ').slice(0, 4).join(' '));
+    let query = '';
+    const tags = videoItem.snippet.tags;
+    
+    // Instead of chopping the title (which just returns 15 copies of the same song),
+    // we randomly select 2 of the creator's video tags to search. This gives a natural
+    // mix of "Related Genre / Related Topic" videos, just like the YouTube algorithm!
+    if (tags && tags.length > 0) {
+        const shuffledTags = tags.sort(() => 0.5 - Math.random());
+        query = shuffledTags.slice(0, 2).join(' ');
+    } else {
+        // If they didn't tag the video, fall back to showing other videos from that channel
+        query = videoItem.snippet.channelTitle;
+    }
+    
+    const keyword = encodeURIComponent(query);
     try {
         const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${keyword}&type=video&maxResults=15&key=${YT_API_KEY}`);
         const data = await res.json();
         if (data.error) throw new Error(data.error.message);
         
-        const formatted = data.items.map(item => ({
-            url: `/watch?v=${item.id.videoId}`,
-            title: item.snippet.title,
-            thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
-            uploaderName: item.snippet.channelTitle,
-            views: 0,
-            duration: 0
-        }));
+        const formatted = data.items
+            .filter(item => item.id.videoId !== videoItem.id) // Exclude the current video
+            .map(item => ({
+                url: `/watch?v=${item.id.videoId}`,
+                title: item.snippet.title,
+                thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
+                uploaderName: item.snippet.channelTitle,
+                views: 0,
+                duration: 0
+            }));
         renderRelatedVideos(formatted);
     } catch (err) {
         relatedContainer.innerHTML = '<p>Could not load related videos.</p>';
