@@ -9,7 +9,7 @@ let API_BASE = null; // Default to null so it finds a working instance
 // Fetch through CORS proxy to prevent GitHub Pages blocks
 async function fetchApi(path) {
     const targetUrl = encodeURIComponent(`${API_BASE}${path}`);
-    return await fetch(`https://corsproxy.io/?${targetUrl}`);
+    return await fetch(`https://api.allorigins.win/raw?url=${targetUrl}`);
 }
 
 // Find a working instance on load
@@ -18,7 +18,7 @@ async function findWorkingInstance() {
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 4000);
-            const testUrl = `https://corsproxy.io/?${encodeURIComponent(url + '/trending?region=US')}`;
+            const testUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url + '/trending?region=US')}`;
             const response = await fetch(testUrl, { signal: controller.signal });
             clearTimeout(timeoutId);
             if (response.ok) {
