@@ -106,18 +106,30 @@ function formatRelativeDate(uploaded) {
     return uploaded || '';
 }
 
-// Fetch and Render Trending
+// Fetch and Render Trending (Randomized Home Feed)
 async function loadTrending() {
-    sectionTitle.textContent = "Trending Now";
+    sectionTitle.textContent = "Recommended For You";
     videoGrid.innerHTML = '';
     loader.style.display = 'block';
 
+    // YouTube Video Categories: 0 (All), 10 (Music), 17 (Sports), 20 (Gaming), 23 (Comedy), 24 (Entertainment), 28 (Tech)
+    const categories = ['', '&videoCategoryId=10', '&videoCategoryId=17', '&videoCategoryId=20', '&videoCategoryId=23', '&videoCategoryId=24', '&videoCategoryId=28'];
+    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+
     try {
         if (YT_API_KEY) {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=IN&maxResults=30&key=${YT_API_KEY}`, { cache: 'no-store' });
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=IN&maxResults=50${randomCategory}&key=${YT_API_KEY}`, { cache: 'no-store' });
             const data = await res.json();
             if (data.error) throw new Error(data.error.message);
-            const formatted = data.items.map(item => ({
+            
+            // Shuffle the results array so they are always in a random order
+            let items = data.items;
+            for (let i = items.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [items[i], items[j]] = [items[j], items[i]];
+            }
+
+            const formatted = items.slice(0, 30).map(item => ({
                 url: `/watch?v=${item.id}`,
                 title: item.snippet.title,
                 thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,

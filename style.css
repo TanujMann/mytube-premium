@@ -566,6 +566,10 @@ h2#sectionTitle {
         border-radius: 0;
         transform: translateY(100%);
     }
+    .player-actions {
+        top: calc(1.5rem + env(safe-area-inset-top, 20px));
+        right: 1rem;
+    }
     .bottom-nav {
         display: flex;
     }
