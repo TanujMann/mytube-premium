@@ -129,7 +129,15 @@ async function loadTrending() {
                 [items[i], items[j]] = [items[j], items[i]];
             }
 
-            const formatted = items.slice(0, 30).map(item => ({
+            // Filter out shorts (less than or equal to 60 seconds)
+            const formatted = items.filter(item => {
+                const match = item.contentDetails.duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+                const h = (parseInt(match[1]) || 0);
+                const m = (parseInt(match[2]) || 0);
+                const s = (parseInt(match[3]) || 0);
+                const totalSeconds = h * 3600 + m * 60 + s;
+                return totalSeconds > 61; // Strict long-form filter
+            }).slice(0, 30).map(item => ({
                 url: `/watch?v=${item.id}`,
                 title: item.snippet.title,
                 thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
@@ -181,17 +189,65 @@ async function searchVideos(query) {
         if (!API_BASE) await findWorkingInstance();
         const response = await fetchApi(`/search?q=${encodeURIComponent(query)}&filter=all`);
         const data = await response.json();
-        // search endpoint returns { items: [...] }
         renderVideos(data.items);
     } catch (err) {
-        console.error("Error searching", err);
-        videoGrid.innerHTML = '<p>Error loading search results.</p>';
+        console.error(err);
+        videoGrid.innerHTML = `<p style="color:var(--danger)">Error loading videos. Please make sure your API key is correct.</p>`;
     } finally {
         loader.style.display = 'none';
     }
 }
 
-// Render Video Cards
+// Fetch and Render Shorts
+async function loadShorts() {
+    sectionTitle.textContent = "YouTube Shorts";
+    videoGrid.innerHTML = '';
+    loader.style.display = 'block';
+
+    try {
+        if (YT_API_KEY) {
+            // Search for #shorts with short duration filter
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=%23shorts&type=video&videoDuration=short&maxResults=30&key=${YT_API_KEY}`, { cache: 'no-store' });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error.message);
+            
+            const formatted = data.items.map(item => ({
+                url: `/watch?v=${item.id.videoId}`,
+                title: item.snippet.title,
+                thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
+                uploaderName: item.snippet.channelTitle,
+                views: 0,
+                duration: "Short"
+            }));
+            renderVideos(formatted);
+            return;
+        }
+
+        // Fallback for Piped (if no API key)
+        if (!API_BASE) await findWorkingInstance();
+        const response = await fetchApi('/trending?region=US');
+        const data = await response.json();
+        
+        // Piped fallback doesn't have a specific shorts endpoint easily accessible, 
+        // so we just filter trending for shorts if possible, or just show trending.
+        renderVideos(data.map(item => ({
+            url: item.url,
+            title: item.title,
+            thumbnail: item.thumbnail,
+            uploaderName: item.uploaderName,
+            views: item.views,
+            duration: formatTime(item.duration)
+        })));
+        
+    } catch (err) {
+        console.error(err);
+        videoGrid.innerHTML = `<p style="color:var(--danger)">Error loading shorts. Please make sure your API key is correct.</p>`;
+    } finally {
+        loader.style.display = 'none';
+    }
+}
+
+// Render Videos to Grids
 function renderVideos(videos) {
     if (!videos || videos.length === 0) {
         videoGrid.innerHTML = '<p>No videos found.</p>';
@@ -200,7 +256,7 @@ function renderVideos(videos) {
 
     const html = videos.filter(v => v.type === 'stream' || YT_API_KEY).map(video => {
         const thumbnail = video.thumbnail || (video.thumbnails && video.thumbnails[0]?.url) || '';
-        const duration = formatTime(video.duration);
+        const duration = typeof video.duration === 'string' ? video.duration : formatTime(video.duration);
         const views = video.views ? `${formatViews(video.views)} views` : '';
         const time = formatRelativeDate(video.uploadedDate);
         const avatar = video.uploaderAvatar || 'https://via.placeholder.com/36';
@@ -539,43 +595,35 @@ searchInput.addEventListener('keypress', (e) => {
     }
 });
 
-navHome.addEventListener('click', (e) => {
-    e.preventDefault();
-    navHome.classList.add('active');
-    navTrending.classList.remove('active');
-    mobileNavHome.classList.add('active');
-    mobileNavTrending.classList.remove('active');
-    searchInput.value = '';
-    loadTrending();
-});
+// Navigation
+const navHome = document.getElementById('navHome');
+const navShorts = document.getElementById('navShorts');
+const navTrending = document.getElementById('navTrending');
+const mobileNavHome = document.getElementById('mobileNavHome');
+const mobileNavShorts = document.getElementById('mobileNavShorts');
+const mobileNavTrending = document.getElementById('mobileNavTrending');
 
-navTrending.addEventListener('click', (e) => {
-    e.preventDefault();
-    navTrending.classList.add('active');
-    navHome.classList.remove('active');
-    mobileNavTrending.classList.add('active');
-    mobileNavHome.classList.remove('active');
-    loadTrending();
-});
+function resetNav() {
+    [navHome, navShorts, navTrending, mobileNavHome, mobileNavShorts, mobileNavTrending].forEach(el => {
+        if (el) el.classList.remove('active');
+    });
+}
 
-mobileNavHome.addEventListener('click', (e) => {
-    e.preventDefault();
-    navHome.classList.add('active');
-    navTrending.classList.remove('active');
-    mobileNavHome.classList.add('active');
-    mobileNavTrending.classList.remove('active');
-    searchInput.value = '';
-    loadTrending();
-});
+const setupNav = (navBtn, mobileNavBtn, loadFunc) => {
+    const handler = (e) => {
+        e.preventDefault();
+        resetNav();
+        if (navBtn) navBtn.classList.add('active');
+        if (mobileNavBtn) mobileNavBtn.classList.add('active');
+        loadFunc();
+    };
+    if (navBtn) navBtn.addEventListener('click', handler);
+    if (mobileNavBtn) mobileNavBtn.addEventListener('click', handler);
+};
 
-mobileNavTrending.addEventListener('click', (e) => {
-    e.preventDefault();
-    navTrending.classList.add('active');
-    navHome.classList.remove('active');
-    mobileNavTrending.classList.add('active');
-    mobileNavHome.classList.remove('active');
-    loadTrending();
-});
+setupNav(navHome, mobileNavHome, () => { searchInput.value = ''; loadTrending(); });
+setupNav(navShorts, mobileNavShorts, () => { searchInput.value = ''; loadShorts(); });
+setupNav(navTrending, mobileNavTrending, () => { searchInput.value = ''; loadTrending(); });
 
 // Init
 loadTrending();
@@ -622,8 +670,10 @@ mainContent.addEventListener('touchend', () => {
         ptrSpinner.classList.add('refreshing');
         ptrSpinner.style.transform = 'translateX(-50%)';
         
+        const activeLoadFunc = navShorts.classList.contains('active') ? loadShorts : loadTrending;
+        
         // Reload the feed
-        loadTrending().then(() => {
+        activeLoadFunc().then(() => {
             ptrSpinner.classList.remove('refreshing');
             ptrSpinner.style.transform = 'translateX(-50%) translateY(0)';
             ptrSpinner.style.opacity = '0';
