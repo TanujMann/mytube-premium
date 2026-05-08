@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mytube-v7';
+const CACHE_NAME = 'mytube-v8';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -32,12 +32,27 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   // We don't want to cache API responses heavily or at all for now, just static assets
-  if (event.request.url.includes('pipedapi') || event.request.url.includes('googleapis')) {
+  if (event.request.url.includes('pipedapi') || event.request.url.includes('googleapis') || event.request.url.includes('suggestqueries')) {
     return;
   }
   
+  // Stale-While-Revalidate Strategy for all other assets
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => response || fetch(event.request))
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        // Only cache valid responses
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, networkResponse.clone());
+          });
+        }
+        return networkResponse;
+      }).catch(() => {
+        // Ignore network errors (offline mode)
+      });
+
+      // Return cached immediately if available, otherwise wait for network
+      return cachedResponse || fetchPromise;
+    })
   );
 });
