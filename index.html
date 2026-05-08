@@ -29,10 +29,23 @@
             </div>
             <button id="searchBtn"><i class="fa-solid fa-search"></i></button>
         </div>
-        <div class="user-profile">
-            <div class="avatar">U</div>
+        <div class="user-profile" id="settingsBtn" style="cursor: pointer;">
+            <div class="avatar"><i class="fa-solid fa-cog"></i></div>
         </div>
     </nav>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h2>Settings</h2>
+            <p>To fix firewall issues, you can provide your own YouTube API Key.</p>
+            <input type="text" id="apiKeyInput" placeholder="Enter YouTube Data API v3 Key..." style="width: 100%; padding: 10px; margin: 15px 0; background: var(--bg-main); border: 1px solid var(--glass-border); color: white; border-radius: 8px;">
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="closeSettingsBtn" style="padding: 10px 15px; background: transparent; border: 1px solid var(--glass-border); color: white; border-radius: 8px; cursor: pointer;">Cancel</button>
+                <button id="saveApiKeyBtn" style="padding: 10px 15px; background: var(--accent); border: none; color: white; border-radius: 8px; cursor: pointer;">Save & Reload</button>
+            </div>
+        </div>
+    </div>
 
     <div class="layout">
         <aside class="sidebar">
@@ -61,8 +74,13 @@
                 <button class="action-btn close-player" id="closePlayer"><i class="fa-solid fa-times"></i></button>
             </div>
             <div class="video-wrapper">
-                <video id="nativePlayer" controls autoplay playsinline></video>
-                <div class="player-loader" id="playerLoader">
+                <!-- Native Video Player -->
+            <video id="nativePlayer" playsinline controls></video>
+            
+            <!-- Fallback Iframe Player (Used if native stream fails) -->
+            <iframe id="iframePlayer" style="display: none; width: 100%; height: 100%; border: none;" allowfullscreen allow="autoplay"></iframe>
+            
+            <div class="player-controls" id="playerLoader">
                     <i class="fa-solid fa-circle-notch fa-spin"></i> Loading High Quality Stream...
                 </div>
             </div>

@@ -509,6 +509,26 @@ h2#sectionTitle {
     color: var(--accent);
 }
 
+/* Settings Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+.modal-content {
+    background: var(--bg-card);
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    width: 90%;
+    max-width: 400px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .logo span {

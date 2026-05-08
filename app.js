@@ -1,14 +1,41 @@
 const API_INSTANCES = [
-    'https://api.piped.projectsegfau.lt',
+    'https://pipedapi.lunar.icu',
     'https://pipedapi.smnz.de',
     'https://pipedapi.adminforge.de',
     'https://pipedapi.kavin.rocks'
 ];
-let API_BASE = null; // Default to null so it finds a working instance
+let API_BASE = null;
+const YT_API_KEY = localStorage.getItem('yt_api_key');
+
+// Settings Modal Logic
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsModal = document.getElementById('settingsModal');
+const apiKeyInput = document.getElementById('apiKeyInput');
+const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+
+settingsBtn.addEventListener('click', () => {
+    apiKeyInput.value = YT_API_KEY || '';
+    settingsModal.style.display = 'flex';
+});
+closeSettingsBtn.addEventListener('click', () => settingsModal.style.display = 'none');
+saveApiKeyBtn.addEventListener('click', () => {
+    localStorage.setItem('yt_api_key', apiKeyInput.value.trim());
+    location.reload();
+});
 
 // Fetch directly (Proxies are blocked by your local firewall)
 async function fetchApi(path) {
     return await fetch(`${API_BASE}${path}`);
+}
+
+function parseISO8601Duration(duration) {
+    const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+    if (!match) return 0;
+    const hours = (parseInt(match[1]) || 0);
+    const minutes = (parseInt(match[2]) || 0);
+    const seconds = (parseInt(match[3]) || 0);
+    return hours * 3600 + minutes * 60 + seconds;
 }
 
 // Find a working instance on load
@@ -48,6 +75,7 @@ const playerOverlay = document.getElementById('playerOverlay');
 const closePlayerBtn = document.getElementById('closePlayer');
 const pipBtn = document.getElementById('pipBtn');
 const nativePlayer = document.getElementById('nativePlayer');
+const iframePlayer = document.getElementById('iframePlayer');
 const playerLoader = document.getElementById('playerLoader');
 const playerTitle = document.getElementById('playerTitle');
 const playerChannelAvatar = document.getElementById('playerChannelAvatar');
@@ -85,6 +113,22 @@ async function loadTrending() {
     loader.style.display = 'block';
 
     try {
+        if (YT_API_KEY) {
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=US&maxResults=30&key=${YT_API_KEY}`);
+            const data = await res.json();
+            if (data.error) throw new Error(data.error.message);
+            const formatted = data.items.map(item => ({
+                url: `/watch?v=${item.id}`,
+                title: item.snippet.title,
+                thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
+                uploaderName: item.snippet.channelTitle,
+                views: item.statistics.viewCount,
+                duration: parseISO8601Duration(item.contentDetails.duration)
+            }));
+            renderVideos(formatted);
+            return;
+        }
+
         if (!API_BASE) await findWorkingInstance();
         const response = await fetchApi('/trending?region=US');
         const data = await response.json();
@@ -106,6 +150,22 @@ async function searchVideos(query) {
     loader.style.display = 'block';
 
     try {
+        if (YT_API_KEY) {
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=30&key=${YT_API_KEY}`);
+            const data = await res.json();
+            if (data.error) throw new Error(data.error.message);
+            const formatted = data.items.map(item => ({
+                url: `/watch?v=${item.id.videoId}`,
+                title: item.snippet.title,
+                thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
+                uploaderName: item.snippet.channelTitle,
+                views: 0,
+                duration: 0
+            }));
+            renderVideos(formatted);
+            return;
+        }
+
         if (!API_BASE) await findWorkingInstance();
         const response = await fetchApi(`/search?q=${encodeURIComponent(query)}&filter=all`);
         const data = await response.json();
@@ -126,7 +186,7 @@ function renderVideos(videos) {
         return;
     }
 
-    const html = videos.filter(v => v.type === 'stream').map(video => {
+    const html = videos.filter(v => v.type === 'stream' || YT_API_KEY).map(video => {
         const thumbnail = video.thumbnail || (video.thumbnails && video.thumbnails[0]?.url) || '';
         const duration = formatTime(video.duration);
         const views = video.views ? `${formatViews(video.views)} views` : '';
@@ -159,7 +219,12 @@ async function openVideo(videoId) {
     if (!videoId) return;
 
     playerOverlay.classList.add('active');
-    nativePlayer.style.display = 'none';
+    
+    // Reset players
+    iframePlayer.style.display = 'none';
+    nativePlayer.style.display = 'block';
+    iframePlayer.src = '';
+    nativePlayer.src = '';
     playerLoader.style.display = 'flex';
     
     // Reset info
@@ -168,23 +233,17 @@ async function openVideo(videoId) {
     playerViews.textContent = '';
     playerDescription.textContent = '';
     playerChannelAvatar.src = '';
-    nativePlayer.src = '';
 
     try {
-        if (!API_BASE) await findWorkingInstance();
+        if (!API_BASE && !YT_API_KEY) await findWorkingInstance();
+        if (YT_API_KEY && !API_BASE) API_BASE = API_INSTANCES[0]; 
+
         const response = await fetchApi(`/streams/${videoId}`);
         const data = await response.json();
 
         if (data.error) throw new Error(data.error);
-
-        // Find best video stream (prefer mp4 with video + audio, else combine, but for simple native HTML5 we want a combined stream)
-        // Piped provides videoStreams (video only usually, sometimes combined).
-        // Best approach for web without HLS.js is finding a combined mp4 format if possible.
-        // Wait, piped often returns hls manifest. Let's use hls if possible, or direct mp4.
         
         let bestStream = null;
-        
-        // Look for combined streams
         const combined = data.videoStreams.filter(s => s.videoOnly === false && s.mimeType.includes('mp4'));
         if (combined.length > 0) {
             bestStream = combined.sort((a, b) => b.quality.localeCompare(a.quality))[0].url;
@@ -231,8 +290,11 @@ async function openVideo(videoId) {
         nativePlayer.style.display = 'block';
         nativePlayer.play();
     } catch (err) {
-        console.error("Error loading stream", err);
-        playerTitle.textContent = 'Failed to load video stream (Ad-blocker/Rate limit)';
+        console.error("Native stream failed, falling back to Iframe", err);
+        // Fallback to Iframe Player
+        nativePlayer.style.display = 'none';
+        iframePlayer.style.display = 'block';
+        iframePlayer.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
     } finally {
         playerLoader.style.display = 'none';
     }
