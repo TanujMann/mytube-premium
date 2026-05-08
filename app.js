@@ -435,11 +435,26 @@ pipBtn.addEventListener('click', async () => {
 // Handle visibility change to attempt keeping audio alive (iOS trick)
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden" && !nativePlayer.paused) {
-        // iOS sometimes pauses video when backgrounded unless it's in PiP
-        // Having mediaSession active usually lets the user resume from Control Center
         console.log("App backgrounded - relying on MediaSession for background audio");
     }
 });
+
+// JSONP Search Suggestions to bypass CORS
+function fetchSuggestionsJSONP(query) {
+    return new Promise((resolve) => {
+        const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+        window[callbackName] = function(data) {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            // YouTube JSONP format: ["query", [["sugg1",0], ["sugg2",0]]]
+            const suggestions = data[1].map(item => item[0]);
+            resolve(suggestions);
+        };
+        const script = document.createElement('script');
+        script.src = `https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q=${encodeURIComponent(query)}&jsonp=${callbackName}`;
+        document.body.appendChild(script);
+    });
+}
 
 // Live Search Suggestions
 let suggestionTimeout;
@@ -454,12 +469,9 @@ searchInput.addEventListener('input', (e) => {
 
     suggestionTimeout = setTimeout(async () => {
         try {
-            // Using official YouTube suggest endpoint (supports CORS natively)
-            const res = await fetch(`https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=${encodeURIComponent(query)}`);
-            const data = await res.json();
-            const suggestions = data[1] || [];
+            const suggestions = await fetchSuggestionsJSONP(query);
             
-            if (suggestions.length > 0) {
+            if (suggestions && suggestions.length > 0) {
                 searchSuggestions.innerHTML = suggestions.map(text => 
                     `<div class="search-suggestion-item" onclick="applySuggestion('${text.replace(/'/g, "\\'")}')">
                         <i class="fa-solid fa-magnifying-glass"></i> ${text}
