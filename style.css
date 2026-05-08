@@ -23,6 +23,7 @@ body {
     color: var(--text-primary);
     line-height: 1.5;
     overflow-x: hidden;
+    overscroll-behavior-y: none; /* Required for custom pull to refresh */
 }
 
 /* Scrollbar */
@@ -315,7 +316,6 @@ h2#sectionTitle {
     color: var(--text-secondary);
 }
 
-/* Loader */
 .loader {
     width: 40px;
     height: 40px;
@@ -328,6 +328,34 @@ h2#sectionTitle {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Pull to Refresh Spinner */
+.ptr-spinner {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    background: var(--bg-card);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    z-index: 10;
+    transition: transform 0.2s, top 0.2s;
+    opacity: 0;
+}
+
+.ptr-spinner.refreshing {
+    top: 20px;
+    opacity: 1;
+    animation: spin 1s linear infinite;
 }
 
 /* Player Overlay */

@@ -564,3 +564,58 @@ mobileNavTrending.addEventListener('click', (e) => {
 
 // Init
 loadTrending();
+
+// --- Pull to Refresh Logic ---
+let ptrStartY = 0;
+let ptrCurrentY = 0;
+let isPulling = false;
+const ptrSpinner = document.getElementById('ptrSpinner');
+const mainContent = document.getElementById('mainContent');
+
+mainContent.addEventListener('touchstart', (e) => {
+    if (window.scrollY === 0) {
+        ptrStartY = e.touches[0].clientY;
+        isPulling = true;
+        ptrSpinner.style.transition = 'none';
+    }
+}, { passive: true });
+
+mainContent.addEventListener('touchmove', (e) => {
+    if (!isPulling) return;
+    ptrCurrentY = e.touches[0].clientY;
+    const distance = ptrCurrentY - ptrStartY;
+    
+    if (distance > 0 && window.scrollY === 0) {
+        // Prevent default only when pulling down at the top to avoid bouncing
+        if (e.cancelable) e.preventDefault();
+        
+        const pullDistance = Math.min(distance * 0.5, 80); // Damping factor
+        ptrSpinner.style.opacity = Math.min(pullDistance / 60, 1);
+        ptrSpinner.style.transform = `translateX(-50%) translateY(${pullDistance}px) rotate(${pullDistance * 5}deg)`;
+    }
+}, { passive: false });
+
+mainContent.addEventListener('touchend', () => {
+    if (!isPulling) return;
+    isPulling = false;
+    
+    const distance = ptrCurrentY - ptrStartY;
+    ptrSpinner.style.transition = 'transform 0.3s, top 0.3s, opacity 0.3s';
+    
+    if (distance > 60 && window.scrollY === 0) {
+        // Trigger Refresh
+        ptrSpinner.classList.add('refreshing');
+        ptrSpinner.style.transform = 'translateX(-50%)';
+        
+        // Reload the feed
+        loadTrending().then(() => {
+            ptrSpinner.classList.remove('refreshing');
+            ptrSpinner.style.transform = 'translateX(-50%) translateY(0)';
+            ptrSpinner.style.opacity = '0';
+        });
+    } else {
+        // Cancel Refresh
+        ptrSpinner.style.transform = 'translateX(-50%) translateY(0)';
+        ptrSpinner.style.opacity = '0';
+    }
+});
