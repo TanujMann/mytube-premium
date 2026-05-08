@@ -66,8 +66,10 @@ const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
 const searchSuggestions = document.getElementById('searchSuggestions');
 const navHome = document.getElementById('navHome');
+const navShorts = document.getElementById('navShorts');
 const navTrending = document.getElementById('navTrending');
 const mobileNavHome = document.getElementById('mobileNavHome');
+const mobileNavShorts = document.getElementById('mobileNavShorts');
 const mobileNavTrending = document.getElementById('mobileNavTrending');
 
 // Player Elements
@@ -595,13 +597,7 @@ searchInput.addEventListener('keypress', (e) => {
     }
 });
 
-// Navigation
-const navHome = document.getElementById('navHome');
-const navShorts = document.getElementById('navShorts');
-const navTrending = document.getElementById('navTrending');
-const mobileNavHome = document.getElementById('mobileNavHome');
-const mobileNavShorts = document.getElementById('mobileNavShorts');
-const mobileNavTrending = document.getElementById('mobileNavTrending');
+// Navigation Events
 
 function resetNav() {
     [navHome, navShorts, navTrending, mobileNavHome, mobileNavShorts, mobileNavTrending].forEach(el => {
