@@ -1,4 +1,29 @@
-const API_BASE = 'https://pipedapi.kavin.rocks';
+const API_INSTANCES = [
+    'https://api.piped.projectsegfau.lt',
+    'https://pipedapi.smnz.de',
+    'https://pipedapi.adminforge.de',
+    'https://pipedapi.kavin.rocks'
+];
+let API_BASE = API_INSTANCES[0]; // Default
+
+// Find a working instance on load
+async function findWorkingInstance() {
+    for (const url of API_INSTANCES) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            const response = await fetch(`${url}/trending?region=US`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (response.ok) {
+                API_BASE = url;
+                console.log("Using API:", API_BASE);
+                return;
+            }
+        } catch (e) {
+            console.log(`Instance ${url} failed, trying next...`);
+        }
+    }
+}
 
 // DOM Elements
 const videoGrid = document.getElementById('videoGrid');
@@ -53,6 +78,7 @@ async function loadTrending() {
     loader.style.display = 'block';
 
     try {
+        await findWorkingInstance();
         const response = await fetch(`${API_BASE}/trending?region=US`);
         const data = await response.json();
         renderVideos(data);
