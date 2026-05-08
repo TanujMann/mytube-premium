@@ -323,22 +323,28 @@ async function playShort(index) {
 }
 
 // Shorts Swipe Gesture Logic
-let shortTouchStartY = 0;
-let shortTouchCurrentY = 0;
+let shortStartY = 0;
+let shortCurrentY = 0;
+let isDragging = false;
 
-shortsReelsContainer.addEventListener('touchstart', (e) => {
-    shortTouchStartY = e.touches[0].clientY;
-}, { passive: true });
+function handleStart(e) {
+    // Ignore if clicking a button
+    if (e.target.closest('button')) return;
+    isDragging = true;
+    shortStartY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+    shortCurrentY = shortStartY;
+}
 
-shortsReelsContainer.addEventListener('touchmove', (e) => {
-    shortTouchCurrentY = e.touches[0].clientY;
-    const distance = shortTouchStartY - shortTouchCurrentY;
-    // Optional: add slide animation here using shortVideoWrapper.style.transform
-}, { passive: true });
+function handleMove(e) {
+    if (!isDragging) return;
+    shortCurrentY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+}
 
-shortsReelsContainer.addEventListener('touchend', (e) => {
-    if (!shortTouchStartY || !shortTouchCurrentY) return;
-    const distance = shortTouchStartY - shortTouchCurrentY;
+function handleEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    
+    const distance = shortStartY - shortCurrentY;
     
     if (distance > 50) { // Swiped Up -> Next Short
         if (currentShortIndex < shortsList.length - 1) {
@@ -352,9 +358,40 @@ shortsReelsContainer.addEventListener('touchend', (e) => {
         }
     }
     
-    shortTouchStartY = 0;
-    shortTouchCurrentY = 0;
-});
+    shortStartY = 0;
+    shortCurrentY = 0;
+}
+
+// Touch Events
+shortsReelsContainer.addEventListener('touchstart', handleStart, { passive: true });
+shortsReelsContainer.addEventListener('touchmove', handleMove, { passive: true });
+shortsReelsContainer.addEventListener('touchend', handleEnd);
+
+// Mouse Events
+shortsReelsContainer.addEventListener('mousedown', handleStart);
+window.addEventListener('mousemove', handleMove);
+window.addEventListener('mouseup', handleEnd);
+
+// Mouse Wheel (Desktop Scroll)
+let wheelTimeout;
+shortsReelsContainer.addEventListener('wheel', (e) => {
+    e.preventDefault(); // Prevent page scroll
+    if (wheelTimeout) return; // Debounce
+    
+    if (e.deltaY > 50) { // Scrolled Down (equivalent to Swipe Up)
+        if (currentShortIndex < shortsList.length - 1) {
+            currentShortIndex++;
+            playShort(currentShortIndex);
+        }
+    } else if (e.deltaY < -50) { // Scrolled Up (equivalent to Swipe Down)
+        if (currentShortIndex > 0) {
+            currentShortIndex--;
+            playShort(currentShortIndex);
+        }
+    }
+    
+    wheelTimeout = setTimeout(() => { wheelTimeout = null; }, 800); // 800ms cooldown between scrolls
+}, { passive: false });
 
 // Render Videos to Grids
 function renderVideos(videos) {
