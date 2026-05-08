@@ -540,7 +540,7 @@ h2#sectionTitle {
         margin: 0 1rem;
     }
     .avatar {
-        display: none;
+        display: flex;
     }
     .navbar {
         padding: 0 1rem;
