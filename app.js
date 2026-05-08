@@ -235,6 +235,7 @@ async function openVideo(videoId) {
     // Reset players and unlock audio context for iOS
     iframePlayer.style.display = 'none';
     nativePlayer.style.display = 'block';
+    pipBtn.style.display = 'flex'; // Show PiP by default for native player
     iframePlayer.src = '';
     nativePlayer.src = '';
     
@@ -339,6 +340,7 @@ async function openVideo(videoId) {
         // Fallback to Iframe Player
         nativePlayer.style.display = 'none';
         iframePlayer.style.display = 'block';
+        pipBtn.style.display = 'none'; // Hide PiP because iOS blocks it for iframes
         // Add playsinline=1 so iOS allows autoplay in the iframe
         iframePlayer.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1`;
     } finally {
