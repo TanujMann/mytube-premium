@@ -85,6 +85,17 @@ const playerChannelName = document.getElementById('playerChannelName');
 const playerViews = document.getElementById('playerViews');
 const playerDescription = document.getElementById('playerDescription');
 
+// Shorts Elements
+const shortsReelsContainer = document.getElementById('shortsReelsContainer');
+const shortVideoWrapper = document.getElementById('shortVideoWrapper');
+const shortNativePlayer = document.getElementById('shortNativePlayer');
+const shortIframePlayer = document.getElementById('shortIframePlayer');
+const shortLoader = document.getElementById('shortLoader');
+const shortTitle = document.getElementById('shortTitle');
+const shortChannel = document.getElementById('shortChannel');
+
+let currentAudioContext = null;
+
 // Format Time
 function formatTime(seconds) {
     if (!seconds) return 'Live';
@@ -111,6 +122,8 @@ function formatRelativeDate(uploaded) {
 // Fetch and Render Trending (Randomized Home Feed)
 async function loadTrending() {
     sectionTitle.textContent = "Recommended For You";
+    videoGrid.style.display = 'grid';
+    shortsReelsContainer.style.display = 'none';
     videoGrid.innerHTML = '';
     loader.style.display = 'block';
 
@@ -168,6 +181,8 @@ async function searchVideos(query) {
     if (!query.trim()) return;
     
     sectionTitle.textContent = `Search Results for "${query}"`;
+    videoGrid.style.display = 'grid';
+    shortsReelsContainer.style.display = 'none';
     videoGrid.innerHTML = '';
     loader.style.display = 'block';
 
@@ -201,53 +216,145 @@ async function searchVideos(query) {
 }
 
 // Fetch and Render Shorts
+let shortsList = [];
+let currentShortIndex = 0;
+
 async function loadShorts() {
     sectionTitle.textContent = "YouTube Shorts";
-    videoGrid.innerHTML = '';
+    videoGrid.style.display = 'none';
+    shortsReelsContainer.style.display = 'block';
     loader.style.display = 'block';
+    
+    // Stop any playing short
+    shortNativePlayer.src = '';
+    shortIframePlayer.src = '';
 
     try {
         if (YT_API_KEY) {
-            // Search for #shorts with short duration filter
             const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=%23shorts&type=video&videoDuration=short&maxResults=30&key=${YT_API_KEY}`, { cache: 'no-store' });
             const data = await res.json();
             if (data.error) throw new Error(data.error.message);
             
-            const formatted = data.items.map(item => ({
-                url: `/watch?v=${item.id.videoId}`,
+            shortsList = data.items.map(item => ({
+                id: item.id.videoId,
                 title: item.snippet.title,
-                thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
-                uploaderName: item.snippet.channelTitle,
-                views: 0,
-                duration: "Short"
+                uploaderName: item.snippet.channelTitle
             }));
-            renderVideos(formatted);
+            
+            if (shortsList.length > 0) {
+                currentShortIndex = 0;
+                playShort(currentShortIndex);
+            }
             return;
         }
 
-        // Fallback for Piped (if no API key)
         if (!API_BASE) await findWorkingInstance();
         const response = await fetchApi('/trending?region=US');
         const data = await response.json();
         
-        // Piped fallback doesn't have a specific shorts endpoint easily accessible, 
-        // so we just filter trending for shorts if possible, or just show trending.
-        renderVideos(data.map(item => ({
-            url: item.url,
+        shortsList = data.map(item => ({
+            id: item.url.split('v=')[1],
             title: item.title,
-            thumbnail: item.thumbnail,
-            uploaderName: item.uploaderName,
-            views: item.views,
-            duration: formatTime(item.duration)
-        })));
+            uploaderName: item.uploaderName
+        }));
+        
+        if (shortsList.length > 0) {
+            currentShortIndex = 0;
+            playShort(currentShortIndex);
+        }
         
     } catch (err) {
         console.error(err);
-        videoGrid.innerHTML = `<p style="color:var(--danger)">Error loading shorts. Please make sure your API key is correct.</p>`;
+        shortTitle.textContent = "Error loading shorts.";
     } finally {
         loader.style.display = 'none';
     }
 }
+
+async function playShort(index) {
+    if (index < 0 || index >= shortsList.length) return;
+    const short = shortsList[index];
+    
+    shortTitle.textContent = short.title;
+    shortChannel.textContent = short.uploaderName;
+    shortLoader.style.display = 'block';
+    
+    shortNativePlayer.style.display = 'none';
+    shortIframePlayer.style.display = 'none';
+    shortNativePlayer.src = '';
+    shortIframePlayer.src = '';
+    
+    try {
+        if (!API_BASE) await findWorkingInstance();
+        const response = await fetchApi(`/streams/${short.id}`);
+        const streamData = await response.json();
+        
+        if (streamData.error) throw new Error(streamData.error);
+        
+        const videoStreams = streamData.videoStreams || [];
+        const mp4Streams = videoStreams.filter(s => s.mimeType && s.mimeType.includes('mp4'));
+        const bestStream = mp4Streams[0] || videoStreams[0];
+        
+        if (bestStream && bestStream.url) {
+            shortNativePlayer.style.display = 'block';
+            shortNativePlayer.src = bestStream.url;
+            
+            // Audio context trick for iOS autoplay
+            if (!currentAudioContext) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) currentAudioContext = new AudioContext();
+            }
+            if (currentAudioContext && currentAudioContext.state === 'suspended') {
+                currentAudioContext.resume();
+            }
+            
+            shortNativePlayer.play().catch(e => console.log('Autoplay blocked:', e));
+        } else {
+            throw new Error("No MP4 found");
+        }
+    } catch (err) {
+        console.log("Falling back to iframe for short", err);
+        shortNativePlayer.style.display = 'none';
+        shortIframePlayer.style.display = 'block';
+        shortIframePlayer.src = `https://www.youtube.com/embed/${short.id}?autoplay=1&playsinline=1&loop=1&playlist=${short.id}`;
+    } finally {
+        shortLoader.style.display = 'none';
+    }
+}
+
+// Shorts Swipe Gesture Logic
+let shortTouchStartY = 0;
+let shortTouchCurrentY = 0;
+
+shortsReelsContainer.addEventListener('touchstart', (e) => {
+    shortTouchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+shortsReelsContainer.addEventListener('touchmove', (e) => {
+    shortTouchCurrentY = e.touches[0].clientY;
+    const distance = shortTouchStartY - shortTouchCurrentY;
+    // Optional: add slide animation here using shortVideoWrapper.style.transform
+}, { passive: true });
+
+shortsReelsContainer.addEventListener('touchend', (e) => {
+    if (!shortTouchStartY || !shortTouchCurrentY) return;
+    const distance = shortTouchStartY - shortTouchCurrentY;
+    
+    if (distance > 50) { // Swiped Up -> Next Short
+        if (currentShortIndex < shortsList.length - 1) {
+            currentShortIndex++;
+            playShort(currentShortIndex);
+        }
+    } else if (distance < -50) { // Swiped Down -> Prev Short
+        if (currentShortIndex > 0) {
+            currentShortIndex--;
+            playShort(currentShortIndex);
+        }
+    }
+    
+    shortTouchStartY = 0;
+    shortTouchCurrentY = 0;
+});
 
 // Render Videos to Grids
 function renderVideos(videos) {

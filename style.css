@@ -584,6 +584,105 @@ h2#sectionTitle {
     width: 90%;
     max-width: 400px;
 }
+/* --- Shorts Reels UI --- */
+.shorts-reels-container {
+    width: 100%;
+    height: calc(100vh - 70px - 60px); /* subtract header and bottom nav */
+    max-width: 450px;
+    margin: 0 auto;
+    background: black;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.short-video-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: black;
+    transition: transform 0.3s ease;
+}
+
+#shortNativePlayer {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Don't crop, just fit like YouTube shorts on desktop */
+}
+
+.short-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    color: var(--accent);
+    z-index: 5;
+    display: none;
+}
+
+.short-ui-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    pointer-events: none; /* Let touches pass through to video */
+}
+
+.short-info {
+    flex: 1;
+    padding-right: 20px;
+    pointer-events: auto;
+}
+
+.short-info h3 {
+    font-size: 1rem;
+    margin-bottom: 5px;
+    font-weight: 500;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.short-info p {
+    font-size: 0.9rem;
+    color: #ccc;
+    font-weight: 600;
+}
+
+.short-actions-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    pointer-events: auto;
+}
+
+.short-action-btn {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(5px);
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.short-action-btn:hover {
+    background: rgba(255,255,255,0.2);
+}
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -633,5 +732,15 @@ h2#sectionTitle {
     }
     .video-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .shorts-reels-container {
+        height: calc(100vh - 60px - env(safe-area-inset-bottom, 0px)); /* Mobile full height minus bottom nav */
+        border-radius: 0;
+        margin-top: -10px; /* pull up under header slightly */
+        max-width: 100%;
+    }
+    #shortNativePlayer {
+        object-fit: cover; /* Crop on mobile to look like real Reels */
     }
 }
