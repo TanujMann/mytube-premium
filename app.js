@@ -1075,7 +1075,7 @@ function renderRelatedVideos(videos) {
 // --- Custom Player Controls Logic ---
 
 function togglePlayPause() {
-    if (nativePlayer.style.display !== 'none') {
+    if (nativePlayer.src && nativePlayer.src !== '' && nativePlayer.src !== window.location.href) {
         if (nativePlayer.paused) {
             nativePlayer.play();
         } else {
@@ -1220,7 +1220,7 @@ progressBarBg.addEventListener('click', (e) => {
     const rect = progressBarBg.getBoundingClientRect();
     const pos = (e.clientX - rect.left) / rect.width;
     
-    if (nativePlayer.style.display !== 'none') {
+    if (nativePlayer.src && nativePlayer.src !== '' && nativePlayer.src !== window.location.href) {
         nativePlayer.currentTime = pos * nativePlayer.duration;
     } else if (ytPlayer && ytPlayer.getDuration) {
         ytPlayer.seekTo(pos * ytPlayer.getDuration(), true);
