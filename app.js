@@ -1010,6 +1010,7 @@ function updateQueue(videos) {
         };
     });
     currentQueueIndex = -1;
+    renderQueue();
 }
 
 // Render Related Videos in Player
@@ -1096,18 +1097,15 @@ nativePlayer.addEventListener('ended', playNextTrack);
 // Queue and Share Buttons
 const playlistBtn = document.getElementById('playlistBtn');
 const shareBtn = document.getElementById('shareBtn');
-const queueOverlay = document.getElementById('queueOverlay');
+const queueSection = document.getElementById('queueSection');
 const queueList = document.getElementById('queueList');
 
 playlistBtn.addEventListener('click', () => {
-    if (queueOverlay.style.display === 'flex') {
-        queueOverlay.style.display = 'none';
-        playlistBtn.style.color = 'white';
-    } else {
-        renderQueue();
-        queueOverlay.style.display = 'flex';
-        playlistBtn.style.color = 'var(--accent)';
-    }
+    // Scroll to the queue section smoothly
+    document.querySelector('.music-player-container').scrollTo({
+        top: queueSection.offsetTop,
+        behavior: 'smooth'
+    });
 });
 
 function renderQueue() {
@@ -1129,8 +1127,11 @@ function renderQueue() {
         item.onclick = () => {
             currentQueueIndex = index - 1; // set it so playNextTrack jumps to this
             playNextTrack();
-            queueOverlay.style.display = 'none';
-            playlistBtn.style.color = 'white';
+            // Scroll back to top
+            document.querySelector('.music-player-container').scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
         };
         
         queueList.appendChild(item);
