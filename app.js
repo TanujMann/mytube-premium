@@ -755,6 +755,13 @@ function loadRecent() {
 async function openVideo(videoId, title, uploader, thumbnail) {
     if (!videoId) return;
 
+    // Update Mini Player UI
+    if (title && uploader) {
+        miniPlayerTitle.textContent = title;
+        miniPlayerArtist.textContent = uploader;
+        miniPlayerArt.src = thumbnail || 'icon.png';
+    }
+
     // Track Usage
     if (title && uploader) {
         const track = { id: videoId, title, artist: uploader, thumbnail };
@@ -1227,16 +1234,7 @@ miniNextBtn.addEventListener('click', (e) => {
     playNextTrack();
 });
 
-// Update Mini Player UI when song plays
-const originalPlayAudio = playAudio;
-window.playAudio = async function(videoId, title, uploader, thumbnail) {
-    miniPlayerTitle.textContent = title;
-    miniPlayerArtist.textContent = uploader;
-    miniPlayerArt.src = thumbnail || 'icon.png';
-    // hide mini player if we open full player
-    miniPlayer.style.display = 'none';
-    await originalPlayAudio(videoId, title, uploader, thumbnail);
-};
+
 
 // Update Mini play/pause icon
 const updateMiniPlayBtnIcon = (isPlaying) => {

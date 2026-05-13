@@ -24,7 +24,7 @@ body {
     color: var(--text-primary);
     line-height: 1.5;
     overflow-x: hidden;
-    /* Allowed native pull to refresh */
+    overscroll-behavior-y: none; /* Prevents native pull-to-refresh on mobile */
     /* Linear gradient to create the dark top and light bottom split */
     background-image: linear-gradient(to bottom, var(--bg-dark-top) 0px, var(--bg-dark-top) 400px, var(--bg-dark) 400px, var(--bg-dark) 100%);
     background-repeat: no-repeat;
