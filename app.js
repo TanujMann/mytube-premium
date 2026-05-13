@@ -1210,21 +1210,28 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
-// JSONP Search Suggestions to bypass CORS
-function fetchSuggestionsJSONP(query) {
-    return new Promise((resolve) => {
-        const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
-        window[callbackName] = function(data) {
-            delete window[callbackName];
-            document.body.removeChild(script);
-            // YouTube JSONP format: ["query", [["sugg1",0], ["sugg2",0]]]
-            const suggestions = data[1].map(item => item[0]);
-            resolve(suggestions);
-        };
-        const script = document.createElement('script');
-        script.src = `https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q=${encodeURIComponent(query)}&jsonp=${callbackName}`;
-        document.body.appendChild(script);
-    });
+// Fetch Search Suggestions using CORS Proxy to bypass PWA script injection limits
+async function fetchSuggestionsJSONP(query) {
+    try {
+        // We use client=firefox to get clean JSON from Google instead of JSONP
+        const targetUrl = encodeURIComponent(`https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=${encodeURIComponent(query)}`);
+        const res = await fetch(`https://corsproxy.io/?${targetUrl}`);
+        if (!res.ok) throw new Error("CORS Proxy failed");
+        
+        const data = await res.json();
+        // client=firefox returns: ["query", ["sugg1", "sugg2"]]
+        return data[1] || [];
+    } catch (err) {
+        console.warn("YouTube suggest failed, falling back to DuckDuckGo...", err);
+        // Fallback to DuckDuckGo which natively supports CORS
+        try {
+            const ddgRes = await fetch(`https://duckduckgo.com/ac/?q=${encodeURIComponent(query)}`);
+            const ddgData = await ddgRes.json();
+            return ddgData.map(item => item.phrase);
+        } catch (fallbackErr) {
+            return [];
+        }
+    }
 }
 
 // Live Search Suggestions & History
