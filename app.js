@@ -1101,11 +1101,25 @@ const queueSection = document.getElementById('queueSection');
 const queueList = document.getElementById('queueList');
 
 playlistBtn.addEventListener('click', () => {
-    // Scroll to the queue section smoothly
-    document.querySelector('.music-player-container').scrollTo({
-        top: queueSection.offsetTop,
-        behavior: 'smooth'
-    });
+    if (queueSection.style.display === 'none' || queueSection.style.display === '') {
+        queueSection.style.display = 'flex';
+        playlistBtn.style.color = 'var(--accent)';
+        // Give it a tiny delay to render before scrolling
+        setTimeout(() => {
+            document.querySelector('.music-player-container').scrollTo({
+                top: queueSection.offsetTop,
+                behavior: 'smooth'
+            });
+        }, 10);
+    } else {
+        queueSection.style.display = 'none';
+        playlistBtn.style.color = 'white';
+        // Scroll back to top
+        document.querySelector('.music-player-container').scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
 });
 
 function renderQueue() {
@@ -1127,6 +1141,9 @@ function renderQueue() {
         item.onclick = () => {
             currentQueueIndex = index - 1; // set it so playNextTrack jumps to this
             playNextTrack();
+            // Hide queue
+            queueSection.style.display = 'none';
+            playlistBtn.style.color = 'white';
             // Scroll back to top
             document.querySelector('.music-player-container').scrollTo({
                 top: 0,

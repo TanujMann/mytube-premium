@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bajaao-v19';
+const CACHE_NAME = 'bajaao-v20';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
