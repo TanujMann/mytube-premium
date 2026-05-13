@@ -1045,7 +1045,7 @@ function playNextTrack() {
         currentQueueIndex++;
         if (currentQueueIndex >= currentQueue.length) currentQueueIndex = 0;
         const nextTrack = currentQueue[currentQueueIndex];
-        playAudio(nextTrack.id, nextTrack.title, nextTrack.uploader, nextTrack.thumbnail);
+        openVideo(nextTrack.id, nextTrack.title, nextTrack.uploader, nextTrack.thumbnail);
     }
 }
 
@@ -1054,7 +1054,7 @@ function playPrevTrack() {
         currentQueueIndex--;
         if (currentQueueIndex < 0) currentQueueIndex = currentQueue.length - 1;
         const prevTrack = currentQueue[currentQueueIndex];
-        playAudio(prevTrack.id, prevTrack.title, prevTrack.uploader, prevTrack.thumbnail);
+        openVideo(prevTrack.id, prevTrack.title, prevTrack.uploader, prevTrack.thumbnail);
     }
 }
 
