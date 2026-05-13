@@ -50,6 +50,30 @@ body {
     -webkit-text-fill-color: transparent;
 }
 
+/* Onboarding Pills */
+.pill {
+    padding: 10px 18px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #1A202C;
+    border-radius: 30px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    user-select: none;
+}
+.pill:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.pill.selected {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+}
+
 /* Navbar */
 .navbar {
     position: fixed;
@@ -1059,3 +1083,5 @@ h2#sectionTitle {
         object-fit: cover; /* Crop on mobile to look like real Reels */
     }
 }
+. p i l l   {   p a d d i n g :   1 0 p x   1 8 p x ;   b a c k g r o u n d :   w h i t e ;   b o r d e r :   1 p x   s o l i d   # d d d ;   c o l o r :   # 1 A 2 0 2 C ;   b o r d e r - r a d i u s :   3 0 p x ;   f o n t - w e i g h t :   5 0 0 ;   c u r s o r :   p o i n t e r ;   t r a n s i t i o n :   a l l   0 . 3 s   e a s e ;   b o x - s h a d o w :   0   2 p x   4 p x   r g b a ( 0 , 0 , 0 , 0 . 0 2 ) ;   }   . p i l l . s e l e c t e d   {   b a c k g r o u n d :   v a r ( - - a c c e n t ) ;   c o l o r :   w h i t e ;   b o r d e r - c o l o r :   v a r ( - - a c c e n t ) ;   b o x - s h a d o w :   0   4 p x   1 0 p x   r g b a ( 2 3 9 ,   6 8 ,   6 8 ,   0 . 3 ) ;   }  
+ 

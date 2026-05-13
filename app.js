@@ -18,17 +18,28 @@ const closeSettingsBtn = document.getElementById('closeSettingsBtn');
 
 // Onboarding Logic
 const onboardingModal = document.getElementById('onboardingModal');
-const obSingerInput = document.getElementById('obSingerInput');
-const obLangInput = document.getElementById('obLangInput');
 const obStartBtn = document.getElementById('obStartBtn');
+const pills = document.querySelectorAll('.pill');
+
+pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+        // Toggle selection logic: only allow one per category or just update styling
+        const type = pill.dataset.type;
+        // Deselect others of same type
+        document.querySelectorAll(`.pill[data-type="${type}"]`).forEach(p => p.classList.remove('selected'));
+        pill.classList.add('selected');
+    });
+});
 
 obStartBtn.addEventListener('click', () => {
-    const singer = obSingerInput.value.trim();
-    const lang = obLangInput.value.trim();
+    const selectedLang = document.querySelector('.pill[data-type="lang"].selected');
+    const selectedArtist = document.querySelector('.pill[data-type="artist"].selected');
     
-    if (singer) localStorage.setItem('favSinger', singer);
-    if (lang) localStorage.setItem('musicLang', lang);
+    const singer = selectedArtist ? selectedArtist.dataset.value : 'The Weeknd';
+    const lang = selectedLang ? selectedLang.dataset.value : 'English';
     
+    localStorage.setItem('favSinger', singer);
+    localStorage.setItem('musicLang', lang);
     localStorage.setItem('onboardingComplete', 'true');
     
     onboardingModal.style.display = 'none';
