@@ -99,6 +99,16 @@ const shortChannel = document.getElementById('shortChannel');
 let currentAudioContext = null;
 
 // Format Time
+let userMusicData = JSON.parse(localStorage.getItem('userMusicData')) || {
+    history: [],
+    mostPlayed: {},
+    artists: {}
+};
+
+function saveMusicData() {
+    localStorage.setItem('userMusicData', JSON.stringify(userMusicData));
+}
+
 function formatTime(seconds) {
     if (!seconds) return 'Live';
     const h = Math.floor(seconds / 3600);
@@ -123,60 +133,93 @@ function formatRelativeDate(uploaded) {
 
 // Fetch and Render Trending (Randomized Home Feed)
 async function loadTrending() {
-    sectionTitle.textContent = "Recommended For You";
-    videoGrid.style.display = 'grid';
-    shortsReelsContainer.style.display = 'none';
-    videoGrid.innerHTML = '';
+    let topArtist = null;
+    const artists = Object.entries(userMusicData.artists).sort((a, b) => b[1] - a[1]);
+    if (artists.length > 0) {
+        topArtist = artists[0][0];
+        sectionTitle.textContent = `Mix based on ${topArtist}`;
+    } else {
+        sectionTitle.textContent = "Recommended For You";
+    }
+    
+    musicFeedContainer.style.display = 'flex';
+    if(typeof shortsReelsContainer !== 'undefined') shortsReelsContainer.style.display = 'none';
+    featuredMusic.innerHTML = '';
+    musicList.innerHTML = '';
     loader.style.display = 'block';
-
-    // YouTube Video Categories: 0 (All), 10 (Music), 17 (Sports), 20 (Gaming), 23 (Comedy), 24 (Entertainment), 28 (Tech)
-    const categories = ['', '&videoCategoryId=10', '&videoCategoryId=17', '&videoCategoryId=20', '&videoCategoryId=23', '&videoCategoryId=24', '&videoCategoryId=28'];
-    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
 
     try {
         if (YT_API_KEY) {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=IN&maxResults=50${randomCategory}&key=${YT_API_KEY}`, { cache: 'no-store' });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error.message);
-            
-            // Shuffle the results array so they are always in a random order
-            let items = data.items;
-            for (let i = items.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [items[i], items[j]] = [items[j], items[i]];
-            }
+            let apiUrl = '';
+            if (topArtist) {
+                // Personalized search based on top artist
+                apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(topArtist + ' songs music')}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`;
+                
+                const res = await fetch(apiUrl, { cache: 'no-store' });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error.message);
+                
+                const formatted = data.items.map(item => ({
+                    url: `/watch?v=${item.id.videoId}`,
+                    title: item.snippet.title,
+                    thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
+                    uploaderName: item.snippet.channelTitle,
+                    duration: "Auto"
+                }));
+                renderVideos(formatted);
+                return;
+            } else {
+                // Generic Trending Music
+                const categories = ['&videoCategoryId=10']; // Strictly Music
+                const randomCategory = categories[0];
+                apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=US&maxResults=50${randomCategory}&key=${YT_API_KEY}`;
+                
+                const res = await fetch(apiUrl, { cache: 'no-store' });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error.message);
+                
+                let items = data.items;
+                for (let i = items.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [items[i], items[j]] = [items[j], items[i]];
+                }
 
-            // Filter out shorts (less than or equal to 60 seconds)
-            const formatted = items.filter(item => {
-                const match = item.contentDetails.duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-                const h = (parseInt(match[1]) || 0);
-                const m = (parseInt(match[2]) || 0);
-                const s = (parseInt(match[3]) || 0);
-                const totalSeconds = h * 3600 + m * 60 + s;
-                return totalSeconds > 61; // Strict long-form filter
-            }).slice(0, 30).map(item => ({
-                url: `/watch?v=${item.id}`,
-                title: item.snippet.title,
-                thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
-                uploaderName: item.snippet.channelTitle,
-                views: item.statistics.viewCount,
-                duration: parseISO8601Duration(item.contentDetails.duration)
-            }));
-            renderVideos(formatted);
-            return;
+                const formatted = items.slice(0, 30).map(item => ({
+                    url: `/watch?v=${item.id}`,
+                    title: item.snippet.title,
+                    thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
+                    uploaderName: item.snippet.channelTitle,
+                    views: item.statistics.viewCount,
+                    duration: parseISO8601Duration(item.contentDetails.duration)
+                }));
+                renderVideos(formatted);
+                return;
+            }
         }
 
         if (!API_BASE) await findWorkingInstance();
-        const response = await fetchApi('/trending?region=US');
-        const data = await response.json();
-        renderVideos(data);
+        
+        // Piped fallback
+        let response;
+        if (topArtist) {
+            response = await fetchApi(`/search?q=${encodeURIComponent(topArtist + ' official music')}&filter=music_songs`);
+            const data = await response.json();
+            renderVideos(data.items);
+        } else {
+            response = await fetchApi('/trending?region=US');
+            const data = await response.json();
+            renderVideos(data);
+        }
+        
     } catch (err) {
         console.error("Error fetching trending", err);
-        videoGrid.innerHTML = '<p>Error loading videos. Please try again later.</p>';
+        musicList.innerHTML = '<p>Error loading videos. Please try again later.</p>';
     } finally {
         loader.style.display = 'none';
     }
 }
+
+
 
 // Fetch and Render Search
 async function searchVideos(query) {
@@ -441,9 +484,57 @@ function renderVideos(videos) {
     `).join('');
 }
 
+// Load Recent History
+function loadRecent() {
+    sectionTitle.textContent = "Recently Played & Most Played";
+    musicFeedContainer.style.display = 'flex';
+    if(typeof shortsReelsContainer !== 'undefined') shortsReelsContainer.style.display = 'none';
+    loader.style.display = 'none';
+    
+    if (userMusicData.history.length === 0) {
+        featuredMusic.innerHTML = '';
+        musicList.innerHTML = '<p style="padding: 20px; text-align: center;">No music history yet. Start listening!</p>';
+        return;
+    }
+    
+    // Sort most played
+    const topPlayed = Object.values(userMusicData.mostPlayed)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5)
+        .map(item => item.track);
+        
+    const historyList = userMusicData.history.slice(0, 30);
+    
+    // Format into standard schema for renderVideos
+    const formattedFeatured = topPlayed.map(t => ({
+        url: `/watch?v=${t.id}`, title: t.title, uploaderName: t.artist, thumbnail: t.thumbnail, duration: "Most Played"
+    }));
+    
+    const formattedHistory = historyList.map(t => ({
+        url: `/watch?v=${t.id}`, title: t.title, uploaderName: t.artist, thumbnail: t.thumbnail, duration: "Recent"
+    }));
+    
+    renderVideos([...formattedFeatured, ...formattedHistory]);
+    sectionTitle.textContent = "Your Music History";
+}
+
 // Open and Play Video
 async function openVideo(videoId, title, uploader, thumbnail) {
     if (!videoId) return;
+
+    // Track Usage
+    if (title && uploader) {
+        const track = { id: videoId, title, artist: uploader, thumbnail };
+        userMusicData.history = userMusicData.history.filter(t => t.id !== videoId);
+        userMusicData.history.unshift(track);
+        if (userMusicData.history.length > 100) userMusicData.history.pop();
+        
+        if (!userMusicData.mostPlayed[videoId]) userMusicData.mostPlayed[videoId] = { count: 0, track };
+        userMusicData.mostPlayed[videoId].count++;
+        
+        userMusicData.artists[uploader] = (userMusicData.artists[uploader] || 0) + 1;
+        saveMusicData();
+    }
 
     playerOverlay.classList.add('active');
     
@@ -808,17 +899,25 @@ function resetNav() {
     });
 }
 
-const setupNav = (navBtn, mobileNavBtn, loadFunc) => {
-    const handler = (e) => {
-        e.preventDefault();
-        resetNav();
-        if (navBtn) navBtn.classList.add('active');
-        if (mobileNavBtn) mobileNavBtn.classList.add('active');
-        loadFunc();
-    };
-    if (navBtn) navBtn.addEventListener('click', handler);
-    if (mobileNavBtn) mobileNavBtn.addEventListener('click', handler);
-};
+// Navigation Setup
+function setupNav(navElement, mobileNavElement, loadFunc) {
+    [navElement, mobileNavElement].forEach(el => {
+        if (!el) return;
+        el.addEventListener('click', (e) => {
+            e.preventDefault();
+            resetNav();
+            navElement.classList.add('active');
+            if (mobileNavElement) mobileNavElement.classList.add('active');
+            
+            // If they click the Shorts/Recent tab, call loadRecent instead!
+            if (navElement.id === 'navShorts') {
+                loadRecent();
+            } else {
+                loadFunc();
+            }
+        });
+    });
+}
 
 setupNav(navHome, mobileNavHome, () => { searchInput.value = ''; loadTrending(); });
 setupNav(navShorts, mobileNavShorts, () => { searchInput.value = ''; loadShorts(); });
