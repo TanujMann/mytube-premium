@@ -310,54 +310,58 @@ async function loadTrending(isPersonalized = true) {
 
     try {
         if (YT_API_KEY) {
-            let apiUrl = '';
-            if (topArtist || customLang !== 'English') {
-                // Personalized search based on top artist and language
-                let searchQuery = '';
-                if(topArtist) searchQuery += topArtist + ' ';
-                searchQuery += customLang + ' official video -mashup -jukebox -nonstop -"best of" -collection -mix -shorts -short';
-                
-                apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`;
-                
-                const res = await fetch(apiUrl, { cache: 'no-store' });
-                const data = await res.json();
-                if (data.error) throw new Error(data.error.message);
-                
-                const formatted = data.items.map(item => ({
-                    url: `/watch?v=${item.id.videoId}`,
-                    title: item.snippet.title,
-                    thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
-                    uploaderName: item.snippet.channelTitle,
-                    duration: "Auto"
-                }));
-                renderVideos(formatted);
-                return;
-            } else {
-                // Generic Trending Music
-                const categories = ['&videoCategoryId=10']; // Strictly Music
-                const randomCategory = categories[0];
-                apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=US&maxResults=50${randomCategory}&key=${YT_API_KEY}`;
-                
-                const res = await fetch(apiUrl, { cache: 'no-store' });
-                const data = await res.json();
-                if (data.error) throw new Error(data.error.message);
-                
-                let items = data.items;
-                for (let i = items.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [items[i], items[j]] = [items[j], items[i]];
-                }
+            try {
+                let apiUrl = '';
+                if (topArtist || customLang !== 'English') {
+                    // Personalized search based on top artist and language
+                    let searchQuery = '';
+                    if(topArtist) searchQuery += topArtist + ' ';
+                    searchQuery += customLang + ' official video -mashup -jukebox -nonstop -"best of" -collection -mix -shorts -short';
+                    
+                    apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`;
+                    
+                    const res = await fetch(apiUrl, { cache: 'no-store' });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error.message);
+                    
+                    const formatted = data.items.map(item => ({
+                        url: `/watch?v=${item.id.videoId}`,
+                        title: item.snippet.title,
+                        thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
+                        uploaderName: item.snippet.channelTitle,
+                        duration: "Auto"
+                    }));
+                    renderVideos(formatted);
+                    return;
+                } else {
+                    // Generic Trending Music
+                    const categories = ['&videoCategoryId=10']; // Strictly Music
+                    const randomCategory = categories[0];
+                    apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=US&maxResults=50${randomCategory}&key=${YT_API_KEY}`;
+                    
+                    const res = await fetch(apiUrl, { cache: 'no-store' });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error.message);
+                    
+                    let items = data.items;
+                    for (let i = items.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [items[i], items[j]] = [items[j], items[i]];
+                    }
 
-                const formatted = items.slice(0, 30).map(item => ({
-                    url: `/watch?v=${item.id}`,
-                    title: item.snippet.title,
-                    thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
-                    uploaderName: item.snippet.channelTitle,
-                    views: item.statistics.viewCount,
-                    duration: parseISO8601Duration(item.contentDetails.duration)
-                }));
-                renderVideos(formatted);
-                return;
+                    const formatted = items.slice(0, 30).map(item => ({
+                        url: `/watch?v=${item.id}`,
+                        title: item.snippet.title,
+                        thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
+                        uploaderName: item.snippet.channelTitle,
+                        views: item.statistics.viewCount,
+                        duration: parseISO8601Duration(item.contentDetails.duration)
+                    }));
+                    renderVideos(formatted);
+                    return;
+                }
+            } catch (ytErr) {
+                console.warn("YouTube API trending failed, falling back to Piped", ytErr);
             }
         }
 
@@ -409,20 +413,24 @@ async function searchVideos(query) {
 
     try {
         if (YT_API_KEY) {
-            const cleanQuery = query + ' -shorts -short';
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(cleanQuery)}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`, { cache: 'no-store' });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error.message);
-            const formatted = data.items.map(item => ({
-                url: `/watch?v=${item.id.videoId}`,
-                title: item.snippet.title,
-                thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
-                uploaderName: item.snippet.channelTitle,
-                views: 0,
-                duration: 0
-            }));
-            renderVideos(formatted);
-            return;
+            try {
+                const cleanQuery = query + ' -shorts -short';
+                const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(cleanQuery)}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`, { cache: 'no-store' });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error.message);
+                const formatted = data.items.map(item => ({
+                    url: `/watch?v=${item.id.videoId}`,
+                    title: item.snippet.title,
+                    thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
+                    uploaderName: item.snippet.channelTitle,
+                    views: 0,
+                    duration: 0
+                }));
+                renderVideos(formatted);
+                return;
+            } catch (ytError) {
+                console.warn("YouTube API search failed, falling back to Piped", ytError);
+            }
         }
 
         if (!API_BASE) await findWorkingInstance();
