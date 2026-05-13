@@ -201,10 +201,10 @@ const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
 const searchSuggestions = document.getElementById('searchSuggestions');
 const navHome = document.getElementById('navHome');
-const navShorts = document.getElementById('navShorts');
+const navRecent = document.getElementById('navShorts'); // using old ID from HTML
 const navTrending = document.getElementById('navTrending');
 const mobileNavHome = document.getElementById('mobileNavHome');
-const mobileNavShorts = document.getElementById('mobileNavShorts');
+const mobileNavRecent = document.getElementById('mobileNavRecent');
 const mobileNavTrending = document.getElementById('mobileNavTrending');
 
 // Player Elements
@@ -225,6 +225,8 @@ const nextBtn = document.getElementById('nextBtn');
 const prevBtn = document.getElementById('prevBtn');
 const shuffleBtn = document.getElementById('shuffleBtn');
 const repeatBtn = document.getElementById('repeatBtn');
+const likeBtn = document.getElementById('likeBtn');
+const likeIcon = document.getElementById('likeIcon');
 const nativePlayer = document.getElementById('nativePlayer');
 const iframePlayer = document.getElementById('iframePlayer');
 const playerLoader = document.getElementById('playerLoader');
@@ -249,7 +251,8 @@ let currentAudioContext = null;
 let userMusicData = JSON.parse(localStorage.getItem('userMusicData')) || {
     history: [],
     mostPlayed: {},
-    artists: {}
+    artists: {},
+    liked: []
 };
 
 function saveMusicData() {
@@ -257,10 +260,11 @@ function saveMusicData() {
 }
 
 function formatTime(seconds) {
-    if (!seconds) return 'Live';
+    if (!seconds || isNaN(seconds)) return '0:00';
+    seconds = Math.floor(seconds);
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
+    const s = Math.floor(seconds % 60);
     if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     return `${m}:${s.toString().padStart(2, '0')}`;
 }
@@ -695,9 +699,14 @@ function loadRecent() {
         .slice(0, 5)
         .map(item => item.track);
         
+    const likedList = (userMusicData.liked || []).slice().reverse();
     const historyList = userMusicData.history.slice(0, 30);
     
     // Format into standard schema for renderVideos
+    const formattedLiked = likedList.map(t => ({
+        url: `/watch?v=${t.id}`, title: t.title, uploaderName: t.artist, thumbnail: t.thumbnail, duration: "Liked ❤️"
+    }));
+    
     const formattedFeatured = topPlayed.map(t => ({
         url: `/watch?v=${t.id}`, title: t.title, uploaderName: t.artist, thumbnail: t.thumbnail, duration: "Most Played"
     }));
@@ -706,8 +715,15 @@ function loadRecent() {
         url: `/watch?v=${t.id}`, title: t.title, uploaderName: t.artist, thumbnail: t.thumbnail, duration: "Recent"
     }));
     
-    renderVideos([...formattedFeatured, ...formattedHistory]);
-    sectionTitle.textContent = "Your Music History";
+    // De-duplicate list to prevent same video showing multiple times consecutively
+    const combined = [...formattedLiked, ...formattedFeatured, ...formattedHistory];
+    const uniqueMap = new Map();
+    combined.forEach(v => {
+        if (!uniqueMap.has(v.url)) uniqueMap.set(v.url, v);
+    });
+    
+    renderVideos(Array.from(uniqueMap.values()));
+    sectionTitle.textContent = "Liked & Recent History";
 }
 
 // Open and Play Video
@@ -717,6 +733,35 @@ async function openVideo(videoId, title, uploader, thumbnail) {
     // Track Usage
     if (title && uploader) {
         const track = { id: videoId, title, artist: uploader, thumbnail };
+        
+        // Update Like Button State
+        if (userMusicData.liked && userMusicData.liked.some(t => t.id === videoId)) {
+            likeIcon.classList.remove('fa-regular');
+            likeIcon.classList.add('fa-solid');
+            likeIcon.style.color = 'var(--accent)';
+        } else {
+            likeIcon.classList.add('fa-regular');
+            likeIcon.classList.remove('fa-solid');
+            likeIcon.style.color = 'white';
+        }
+        
+        likeBtn.onclick = () => {
+            if (!userMusicData.liked) userMusicData.liked = [];
+            const index = userMusicData.liked.findIndex(t => t.id === videoId);
+            if (index > -1) {
+                userMusicData.liked.splice(index, 1);
+                likeIcon.classList.add('fa-regular');
+                likeIcon.classList.remove('fa-solid');
+                likeIcon.style.color = 'white';
+            } else {
+                userMusicData.liked.push(track);
+                likeIcon.classList.remove('fa-regular');
+                likeIcon.classList.add('fa-solid');
+                likeIcon.style.color = 'var(--accent)';
+            }
+            saveMusicData();
+        };
+
         userMusicData.history = userMusicData.history.filter(t => t.id !== videoId);
         userMusicData.history.unshift(track);
         if (userMusicData.history.length > 100) userMusicData.history.pop();
@@ -1278,7 +1323,7 @@ searchInput.addEventListener('keypress', (e) => {
 // Navigation Events
 
 function resetNav() {
-    [navHome, navShorts, navTrending, mobileNavHome, mobileNavShorts, mobileNavTrending].forEach(el => {
+    [navHome, navRecent, navTrending, mobileNavHome, mobileNavRecent, mobileNavTrending].forEach(el => {
         if (el) el.classList.remove('active');
     });
 }
@@ -1304,7 +1349,7 @@ function setupNav(navElement, mobileNavElement, loadFunc) {
 }
 
 setupNav(navHome, mobileNavHome, () => { searchInput.value = ''; loadTrending(); });
-setupNav(navShorts, mobileNavShorts, () => { searchInput.value = ''; loadShorts(); });
+setupNav(navRecent, mobileNavRecent, () => { searchInput.value = ''; loadRecent(); });
 setupNav(navTrending, mobileNavTrending, () => { searchInput.value = ''; loadTrending(); });
 
 // Init
