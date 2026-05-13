@@ -315,7 +315,7 @@ async function loadTrending(isPersonalized = true) {
                 // Personalized search based on top artist and language
                 let searchQuery = '';
                 if(topArtist) searchQuery += topArtist + ' ';
-                searchQuery += customLang + ' official video -mashup -jukebox -nonstop -"best of" -collection -mix';
+                searchQuery += customLang + ' official video -mashup -jukebox -nonstop -"best of" -collection -mix -shorts -short';
                 
                 apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`;
                 
@@ -368,7 +368,7 @@ async function loadTrending(isPersonalized = true) {
         if (topArtist || customLang !== 'English') {
             let searchQuery = '';
             if(topArtist) searchQuery += topArtist + ' ';
-            searchQuery += customLang + ' official music -mashup -jukebox -nonstop -mix';
+            searchQuery += customLang + ' official music -mashup -jukebox -nonstop -mix -shorts -short';
             response = await fetchApi(`/search?q=${encodeURIComponent(searchQuery)}&filter=music_songs`);
             const data = await response.json();
             renderVideos(data.items);
@@ -409,7 +409,8 @@ async function searchVideos(query) {
 
     try {
         if (YT_API_KEY) {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`, { cache: 'no-store' });
+            const cleanQuery = query + ' -shorts -short';
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(cleanQuery)}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`, { cache: 'no-store' });
             const data = await res.json();
             if (data.error) throw new Error(data.error.message);
             const formatted = data.items.map(item => ({
@@ -1066,6 +1067,66 @@ function playPrevTrack() {
 
 // Auto play next track when video ends
 nativePlayer.addEventListener('ended', playNextTrack);
+
+// Queue and Share Buttons
+const playlistBtn = document.getElementById('playlistBtn');
+const shareBtn = document.getElementById('shareBtn');
+const queueOverlay = document.getElementById('queueOverlay');
+const queueList = document.getElementById('queueList');
+
+playlistBtn.addEventListener('click', () => {
+    if (queueOverlay.style.display === 'flex') {
+        queueOverlay.style.display = 'none';
+        playlistBtn.style.color = 'white';
+    } else {
+        renderQueue();
+        queueOverlay.style.display = 'flex';
+        playlistBtn.style.color = 'var(--accent)';
+    }
+});
+
+function renderQueue() {
+    queueList.innerHTML = '';
+    currentQueue.forEach((track, index) => {
+        if (index <= currentQueueIndex) return; // Only show upcoming
+        
+        const item = document.createElement('div');
+        item.style.cssText = 'display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.1); cursor: pointer;';
+        
+        item.innerHTML = `
+            <img src="${track.thumbnail}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover;">
+            <div style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+                <span style="color: white; font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title}</span>
+                <span style="color: #ccc; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.uploader}</span>
+            </div>
+        `;
+        
+        item.onclick = () => {
+            currentQueueIndex = index - 1; // set it so playNextTrack jumps to this
+            playNextTrack();
+            queueOverlay.style.display = 'none';
+            playlistBtn.style.color = 'white';
+        };
+        
+        queueList.appendChild(item);
+    });
+    
+    if (queueList.innerHTML === '') {
+        queueList.innerHTML = '<p style="color: #888; text-align: center; font-size: 0.9rem; margin-top: 20px;">No upcoming tracks in queue.</p>';
+    }
+}
+
+shareBtn.addEventListener('click', () => {
+    if (navigator.share) {
+        navigator.share({
+            title: `Listen to ${playerTitle.textContent} on BAJAAO !!`,
+            text: `I'm listening to ${playerTitle.textContent} by ${playerChannelName.textContent} ad-free on BAJAAO !! 🎵`,
+            url: window.location.href
+        }).catch(err => console.log('Share failed:', err));
+    } else {
+        alert("Sharing not supported on this browser.");
+    }
+});
 
 window.updatePlayBtnIcon = (isPlaying) => {
     if (isPlaying) {
