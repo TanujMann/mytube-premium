@@ -203,9 +203,11 @@ const searchSuggestions = document.getElementById('searchSuggestions');
 const navHome = document.getElementById('navHome');
 const navRecent = document.getElementById('navShorts'); // using old ID from HTML
 const navTrending = document.getElementById('navTrending');
+const navLiked = document.getElementById('navLiked');
 const mobileNavHome = document.getElementById('mobileNavHome');
 const mobileNavRecent = document.getElementById('mobileNavRecent');
 const mobileNavTrending = document.getElementById('mobileNavTrending');
+const mobileNavLiked = document.getElementById('mobileNavLiked');
 
 // Player Elements
 const playerOverlay = document.getElementById('playerOverlay');
@@ -741,14 +743,27 @@ function loadRecent() {
     }));
     
     // De-duplicate list to prevent same video showing multiple times consecutively
-    const combined = [...formattedLiked, ...formattedFeatured, ...formattedHistory];
+    const combined = [...formattedFeatured, ...formattedHistory];
     const uniqueMap = new Map();
     combined.forEach(v => {
         if (!uniqueMap.has(v.url)) uniqueMap.set(v.url, v);
     });
     
     renderVideos(Array.from(uniqueMap.values()));
-    sectionTitle.textContent = "Liked & Recent History";
+    sectionTitle.textContent = "Recent History & Most Played";
+}
+
+function loadLiked() {
+    shortsReelsContainer.style.display = 'none';
+    musicFeedContainer.style.display = 'block';
+    
+    const likedList = userMusicData.liked || [];
+    const formattedLiked = likedList.map(t => ({
+        url: `/watch?v=${t.id}`, title: t.title, uploaderName: t.artist, thumbnail: t.thumbnail, duration: "Liked"
+    }));
+    
+    renderVideos(formattedLiked.reverse()); // Show newest likes first
+    sectionTitle.textContent = "Your Liked Songs";
 }
 
 // Open and Play Video
@@ -1445,7 +1460,7 @@ searchInput.addEventListener('keypress', (e) => {
 // Navigation Events
 
 function resetNav() {
-    [navHome, navRecent, navTrending, mobileNavHome, mobileNavRecent, mobileNavTrending].forEach(el => {
+    [navHome, navRecent, navTrending, navLiked, mobileNavHome, mobileNavRecent, mobileNavTrending, mobileNavLiked].forEach(el => {
         if (el) el.classList.remove('active');
     });
 }
@@ -1457,12 +1472,14 @@ function setupNav(navElement, mobileNavElement, loadFunc) {
         el.addEventListener('click', (e) => {
             e.preventDefault();
             resetNav();
-            navElement.classList.add('active');
+            if (navElement) navElement.classList.add('active');
             if (mobileNavElement) mobileNavElement.classList.add('active');
             
-            // If they click the Shorts/Recent tab, call loadRecent instead!
-            if (navElement.id === 'navShorts') {
+            // Call specific load function
+            if (navElement && navElement.id === 'navShorts') {
                 loadRecent();
+            } else if (navElement && navElement.id === 'navLiked') {
+                loadLiked();
             } else {
                 loadFunc();
             }
@@ -1473,6 +1490,7 @@ function setupNav(navElement, mobileNavElement, loadFunc) {
 setupNav(navHome, mobileNavHome, () => { searchInput.value = ''; loadTrending(true); });
 setupNav(navRecent, mobileNavRecent, () => { searchInput.value = ''; loadRecent(); });
 setupNav(navTrending, mobileNavTrending, () => { searchInput.value = ''; loadTrending(false); });
+setupNav(navLiked, mobileNavLiked, () => { searchInput.value = ''; loadLiked(); });
 
 // Show Username in Header
 const storedName = localStorage.getItem('userName');
