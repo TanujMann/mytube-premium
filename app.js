@@ -667,7 +667,7 @@ shortsReelsContainer.addEventListener('wheel', (e) => {
 }, { passive: false });
 
 // Render Videos to Grids
-function renderVideos(videos) {
+function renderVideos(videos, disableBanners = false) {
     if (!videos || videos.length === 0) {
         musicFeedContainer.style.display = 'block';
         featuredMusic.innerHTML = '';
@@ -687,8 +687,8 @@ function renderVideos(videos) {
         };
     });
 
-    const featured = items.slice(0, 5);
-    const list = items.slice(5);
+    const featured = disableBanners ? [] : items.slice(0, 5);
+    const list = disableBanners ? items : items.slice(5);
 
     featuredMusic.innerHTML = featured.map(track => `
         <div class="featured-card" style="background-image: url('${track.thumbnail}')" onclick="openVideo('${track.id}', '${track.title.replace(/'/g, "\\'").replace(/"/g, "&quot;")}', '${track.artist.replace(/'/g, "\\'").replace(/"/g, "&quot;")}', '${track.thumbnail}')">
@@ -767,7 +767,7 @@ function loadLiked() {
         url: `/watch?v=${t.id}`, title: t.title, uploaderName: t.artist, thumbnail: t.thumbnail, duration: "Liked"
     }));
     
-    renderVideos(formattedLiked.reverse()); // Show newest likes first
+    renderVideos(formattedLiked.reverse(), true); // Pass true to disable featured banners
     sectionTitle.textContent = "Your Liked Songs";
 }
 

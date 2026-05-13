@@ -770,6 +770,8 @@ h2#sectionTitle {
     gap: 1.5rem;
     padding-bottom: 1rem;
     scroll-snap-type: x mandatory;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
 }
 .featured-scroll::-webkit-scrollbar {
     display: none;
