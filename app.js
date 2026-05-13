@@ -324,7 +324,12 @@ async function loadTrending(isPersonalized = true) {
                     const data = await res.json();
                     if (data.error) throw new Error(data.error.message);
                     
-                    const formatted = data.items.map(item => ({
+                    const noShorts = data.items.filter(item => {
+                        const t = item.snippet.title.toLowerCase();
+                        return !t.includes('#short') && !t.includes('shorts') && !t.includes('tiktok');
+                    });
+                    
+                    const formatted = noShorts.map(item => ({
                         url: `/watch?v=${item.id.videoId}`,
                         title: item.snippet.title,
                         thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
@@ -344,6 +349,11 @@ async function loadTrending(isPersonalized = true) {
                     if (data.error) throw new Error(data.error.message);
                     
                     let items = data.items;
+                    items = items.filter(item => {
+                        const t = item.snippet.title.toLowerCase();
+                        return !t.includes('#short') && !t.includes('shorts');
+                    });
+                    
                     for (let i = items.length - 1; i > 0; i--) {
                         const j = Math.floor(Math.random() * (i + 1));
                         [items[i], items[j]] = [items[j], items[i]];
@@ -418,7 +428,13 @@ async function searchVideos(query) {
                 const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(cleanQuery)}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`, { cache: 'no-store' });
                 const data = await res.json();
                 if (data.error) throw new Error(data.error.message);
-                const formatted = data.items.map(item => ({
+                
+                const noShorts = data.items.filter(item => {
+                    const t = item.snippet.title.toLowerCase();
+                    return !t.includes('#short') && !t.includes('shorts');
+                });
+                
+                const formatted = noShorts.map(item => ({
                     url: `/watch?v=${item.id.videoId}`,
                     title: item.snippet.title,
                     thumbnail: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url,
@@ -965,6 +981,7 @@ async function fetchRelatedVideos(videoItem) {
         
         const formatted = data.items
             .filter(item => item.id.videoId !== videoItem.id) // Exclude the current video
+            .filter(item => !item.snippet.title.toLowerCase().includes('#short') && !item.snippet.title.toLowerCase().includes('shorts'))
             .map(item => ({
                 url: `/watch?v=${item.id.videoId}`,
                 title: item.snippet.title,
@@ -1285,28 +1302,35 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
-// Fetch Search Suggestions using CORS Proxy to bypass PWA script injection limits
-async function fetchSuggestionsJSONP(query) {
-    try {
-        // We use client=firefox to get clean JSON from Google instead of JSONP
-        const targetUrl = encodeURIComponent(`https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=${encodeURIComponent(query)}`);
-        const res = await fetch(`https://corsproxy.io/?${targetUrl}`);
-        if (!res.ok) throw new Error("CORS Proxy failed");
+// Fetch Search Suggestions using robust JSONP
+function fetchSuggestionsJSONP(query) {
+    return new Promise((resolve) => {
+        const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+        let script;
         
-        const data = await res.json();
-        // client=firefox returns: ["query", ["sugg1", "sugg2"]]
-        return data[1] || [];
-    } catch (err) {
-        console.warn("YouTube suggest failed, falling back to DuckDuckGo...", err);
-        // Fallback to DuckDuckGo which natively supports CORS
-        try {
-            const ddgRes = await fetch(`https://duckduckgo.com/ac/?q=${encodeURIComponent(query)}`);
-            const ddgData = await ddgRes.json();
-            return ddgData.map(item => item.phrase);
-        } catch (fallbackErr) {
-            return [];
-        }
-    }
+        const timeout = setTimeout(() => {
+            delete window[callbackName];
+            if (script && script.parentNode) document.body.removeChild(script);
+            resolve([]); // Return empty if hung
+        }, 1500);
+
+        window[callbackName] = function(data) {
+            clearTimeout(timeout);
+            delete window[callbackName];
+            if (script && script.parentNode) document.body.removeChild(script);
+            const suggestions = data[1].map(item => item[0]);
+            resolve(suggestions);
+        };
+
+        script = document.createElement('script');
+        script.onerror = () => {
+            clearTimeout(timeout);
+            delete window[callbackName];
+            resolve([]);
+        };
+        script.src = `https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q=${encodeURIComponent(query)}&jsonp=${callbackName}`;
+        document.body.appendChild(script);
+    });
 }
 
 // Live Search Suggestions & History
