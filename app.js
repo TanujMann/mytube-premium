@@ -715,7 +715,7 @@ async function openVideo(videoId, title, uploader, thumbnail) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: data.title || title,
                 artist: data.uploader || uploader,
-                album: 'MyMusic Premium',
+                album: 'BAJAAO !! Premium',
                 artwork: [
                     { src: thumbnail || data.thumbnailUrl || 'icon.png', sizes: '512x512', type: 'image/png' }
                 ]
