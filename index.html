@@ -25,6 +25,25 @@
         <p style="color: #718096; font-size: 1rem;">Your Personal Mix</p>
     </div>
 
+    <!-- Onboarding Screen -->
+    <div id="onboardingModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-main); z-index: 9998; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; box-sizing: border-box;">
+        <img src="icon.png" alt="Logo" style="width: 100px; height: 100px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+        <h2 style="color: var(--text-primary); font-size: 2rem; margin-bottom: 0.5rem; text-align: center;">Welcome to MyMusic</h2>
+        <p style="color: var(--text-secondary); text-align: center; margin-bottom: 2rem; max-width: 400px;">Let's customize your personal mix. What do you love listening to?</p>
+        
+        <div style="width: 100%; max-width: 400px; margin-bottom: 1.5rem;">
+            <label style="color: var(--text-primary); font-weight: 600; display: block; margin-bottom: 8px;">Favorite Singer / Artist</label>
+            <input type="text" id="obSingerInput" placeholder="e.g. The Weeknd, Drake" style="width: 100%; padding: 15px; background: white; border: 1px solid var(--glass-border); color: #111; border-radius: 12px; font-size: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+        </div>
+        
+        <div style="width: 100%; max-width: 400px; margin-bottom: 2rem;">
+            <label style="color: var(--text-primary); font-weight: 600; display: block; margin-bottom: 8px;">Music Language</label>
+            <input type="text" id="obLangInput" placeholder="e.g. English, Punjabi, Spanish" style="width: 100%; padding: 15px; background: white; border: 1px solid var(--glass-border); color: #111; border-radius: 12px; font-size: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+        </div>
+        
+        <button id="obStartBtn" style="width: 100%; max-width: 400px; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);">Get Started</button>
+    </div>
+
     <nav class="navbar">
         <div class="logo">
             <i class="fa-solid fa-music gradient-text"></i>

@@ -16,6 +16,30 @@ const musicLangInput = document.getElementById('musicLangInput');
 const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
 const closeSettingsBtn = document.getElementById('closeSettingsBtn');
 
+// Onboarding Logic
+const onboardingModal = document.getElementById('onboardingModal');
+const obSingerInput = document.getElementById('obSingerInput');
+const obLangInput = document.getElementById('obLangInput');
+const obStartBtn = document.getElementById('obStartBtn');
+
+obStartBtn.addEventListener('click', () => {
+    const singer = obSingerInput.value.trim();
+    const lang = obLangInput.value.trim();
+    
+    if (singer) localStorage.setItem('favSinger', singer);
+    if (lang) localStorage.setItem('musicLang', lang);
+    
+    localStorage.setItem('onboardingComplete', 'true');
+    
+    onboardingModal.style.display = 'none';
+    
+    // Sync with settings inputs
+    favSingerInput.value = singer;
+    musicLangInput.value = lang;
+    
+    loadTrending();
+});
+
 settingsBtn.addEventListener('click', () => {
     apiKeyInput.value = YT_API_KEY || '';
     favSingerInput.value = localStorage.getItem('favSinger') || '';
@@ -447,6 +471,26 @@ shortsReelsContainer.addEventListener('touchend', handleEnd);
 shortsReelsContainer.addEventListener('mousedown', handleStart);
 window.addEventListener('mousemove', handleMove);
 window.addEventListener('mouseup', handleEnd);
+
+// Load initial content or onboarding
+if (!localStorage.getItem('onboardingComplete')) {
+    onboardingModal.style.display = 'flex';
+    // Let the splash screen fade out so onboarding is visible
+    setTimeout(() => {
+        const splashScreen = document.getElementById('splashScreen');
+        if (splashScreen) {
+            splashScreen.style.opacity = '0';
+            setTimeout(() => splashScreen.remove(), 500);
+        }
+    }, 800);
+} else {
+    loadTrending();
+}
+
+// Global error handling for unhandled promises
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('Unhandled promise rejection:', event.reason);
+});
 
 // Mouse Wheel (Desktop Scroll)
 let wheelTimeout;
@@ -955,7 +999,19 @@ setupNav(navShorts, mobileNavShorts, () => { searchInput.value = ''; loadShorts(
 setupNav(navTrending, mobileNavTrending, () => { searchInput.value = ''; loadTrending(); });
 
 // Init
-loadTrending();
+if (!localStorage.getItem('onboardingComplete')) {
+    onboardingModal.style.display = 'flex';
+    // Let the splash screen fade out so onboarding is visible
+    setTimeout(() => {
+        const splashScreen = document.getElementById('splashScreen');
+        if (splashScreen) {
+            splashScreen.style.opacity = '0';
+            setTimeout(() => splashScreen.remove(), 500);
+        }
+    }, 800);
+} else {
+    loadTrending();
+}
 
 // --- Pull to Refresh Logic ---
 let ptrStartY = 0;
