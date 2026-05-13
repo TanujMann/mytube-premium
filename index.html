@@ -38,12 +38,21 @@
     <!-- Settings Modal -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
-            <h2>Settings</h2>
-            <p>To fix firewall issues, you can provide your own YouTube API Key.</p>
-            <input type="text" id="apiKeyInput" placeholder="Enter YouTube Data API v3 Key..." style="width: 100%; padding: 10px; margin: 15px 0; background: var(--bg-main); border: 1px solid var(--glass-border); color: white; border-radius: 8px;">
+            <h2 style="color: black;">Settings & Personalization</h2>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 15px;">Customize your music feed algorithm.</p>
+            
+            <label style="color: black; font-weight: 600; display: block; margin-bottom: 5px; text-align: left;">Favorite Singer</label>
+            <input type="text" id="favSingerInput" placeholder="e.g. The Weeknd" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #f3f4f6; border: 1px solid #ccc; color: black; border-radius: 8px;">
+            
+            <label style="color: black; font-weight: 600; display: block; margin-bottom: 5px; text-align: left;">Music Language</label>
+            <input type="text" id="musicLangInput" placeholder="e.g. English, Punjabi, Spanish" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #f3f4f6; border: 1px solid #ccc; color: black; border-radius: 8px;">
+            
+            <label style="color: black; font-weight: 600; display: block; margin-bottom: 5px; text-align: left;">YouTube API Key (Optional)</label>
+            <input type="text" id="apiKeyInput" placeholder="Enter key to bypass firewall..." style="width: 100%; padding: 10px; margin-bottom: 20px; background: #f3f4f6; border: 1px solid #ccc; color: black; border-radius: 8px;">
+            
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button id="closeSettingsBtn" style="padding: 10px 15px; background: transparent; border: 1px solid var(--glass-border); color: white; border-radius: 8px; cursor: pointer;">Cancel</button>
-                <button id="saveApiKeyBtn" style="padding: 10px 15px; background: var(--accent); border: none; color: white; border-radius: 8px; cursor: pointer;">Save & Reload</button>
+                <button id="closeSettingsBtn" style="padding: 10px 15px; background: transparent; border: 1px solid #ccc; color: black; border-radius: 8px; cursor: pointer;">Cancel</button>
+                <button id="saveApiKeyBtn" style="padding: 10px 15px; background: var(--accent); border: none; color: white; border-radius: 8px; cursor: pointer;">Save Settings</button>
             </div>
         </div>
     </div>

@@ -11,16 +11,22 @@ const YT_API_KEY = localStorage.getItem('yt_api_key');
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsModal = document.getElementById('settingsModal');
 const apiKeyInput = document.getElementById('apiKeyInput');
+const favSingerInput = document.getElementById('favSingerInput');
+const musicLangInput = document.getElementById('musicLangInput');
 const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
 const closeSettingsBtn = document.getElementById('closeSettingsBtn');
 
 settingsBtn.addEventListener('click', () => {
     apiKeyInput.value = YT_API_KEY || '';
+    favSingerInput.value = localStorage.getItem('favSinger') || '';
+    musicLangInput.value = localStorage.getItem('musicLang') || '';
     settingsModal.style.display = 'flex';
 });
 closeSettingsBtn.addEventListener('click', () => settingsModal.style.display = 'none');
 saveApiKeyBtn.addEventListener('click', () => {
     localStorage.setItem('yt_api_key', apiKeyInput.value.trim());
+    localStorage.setItem('favSinger', favSingerInput.value.trim());
+    localStorage.setItem('musicLang', musicLangInput.value.trim());
     location.reload();
 });
 
@@ -133,10 +139,19 @@ function formatRelativeDate(uploaded) {
 
 // Fetch and Render Trending (Randomized Home Feed)
 async function loadTrending() {
-    let topArtist = null;
-    const artists = Object.entries(userMusicData.artists).sort((a, b) => b[1] - a[1]);
-    if (artists.length > 0) {
-        topArtist = artists[0][0];
+    let customSinger = localStorage.getItem('favSinger') || null;
+    let customLang = localStorage.getItem('musicLang') || 'English';
+    
+    let topArtist = customSinger;
+    
+    if (!topArtist) {
+        const artists = Object.entries(userMusicData.artists).sort((a, b) => b[1] - a[1]);
+        if (artists.length > 0) {
+            topArtist = artists[0][0];
+        }
+    }
+    
+    if (topArtist) {
         sectionTitle.textContent = `Mix based on ${topArtist}`;
     } else {
         sectionTitle.textContent = "Recommended For You";
@@ -151,9 +166,13 @@ async function loadTrending() {
     try {
         if (YT_API_KEY) {
             let apiUrl = '';
-            if (topArtist) {
-                // Personalized search based on top artist
-                apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(topArtist + ' songs music')}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`;
+            if (topArtist || customLang !== 'English') {
+                // Personalized search based on top artist and language
+                let searchQuery = '';
+                if(topArtist) searchQuery += topArtist + ' ';
+                searchQuery += customLang + ' songs music';
+                
+                apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`;
                 
                 const res = await fetch(apiUrl, { cache: 'no-store' });
                 const data = await res.json();
@@ -201,8 +220,11 @@ async function loadTrending() {
         
         // Piped fallback
         let response;
-        if (topArtist) {
-            response = await fetchApi(`/search?q=${encodeURIComponent(topArtist + ' official music')}&filter=music_songs`);
+        if (topArtist || customLang !== 'English') {
+            let searchQuery = '';
+            if(topArtist) searchQuery += topArtist + ' ';
+            searchQuery += customLang + ' official music';
+            response = await fetchApi(`/search?q=${encodeURIComponent(searchQuery)}&filter=music_songs`);
             const data = await response.json();
             renderVideos(data.items);
         } else {
