@@ -118,7 +118,14 @@ const mobileNavTrending = document.getElementById('mobileNavTrending');
 // Player Elements
 const playerOverlay = document.getElementById('playerOverlay');
 const closePlayerBtn = document.getElementById('closePlayer');
-const pipBtn = document.getElementById('pipBtn');
+
+const miniPlayer = document.getElementById('miniPlayer');
+const miniPlayerArt = document.getElementById('miniPlayerArt');
+const miniPlayerTitle = document.getElementById('miniPlayerTitle');
+const miniPlayerArtist = document.getElementById('miniPlayerArtist');
+const miniPlayPauseBtn = document.getElementById('miniPlayPauseBtn');
+const miniNextBtn = document.getElementById('miniNextBtn');
+const miniPlayerLeft = document.getElementById('miniPlayerLeft');const pipBtn = document.getElementById('pipBtn');
 const nativePlayer = document.getElementById('nativePlayer');
 const iframePlayer = document.getElementById('iframePlayer');
 const playerLoader = document.getElementById('playerLoader');
@@ -865,15 +872,92 @@ progressBarBg.addEventListener('click', (e) => {
     nativePlayer.currentTime = pos * nativePlayer.duration;
 });
 
-// Close Player overrides
+// Close Player overrides -> Minimizes the player
 closePlayerBtn.addEventListener('click', () => {
     playerOverlay.classList.remove('active');
-    nativePlayer.pause();
-    iframePlayer.src = '';
+    miniPlayer.style.display = 'flex';
+});
+
+// Mini Player Maximize
+miniPlayerLeft.addEventListener('click', () => {
+    miniPlayer.style.display = 'none';
+    playerOverlay.classList.add('active');
+});
+
+// Mini Player Controls
+miniPlayPauseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    togglePlayPause();
+});
+miniNextBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    playNextTrack();
+});
+
+// Update Mini Player UI when song plays
+const originalPlayAudio = playAudio;
+window.playAudio = async function(videoId, title, uploader, thumbnail) {
+    miniPlayerTitle.textContent = title;
+    miniPlayerArtist.textContent = uploader;
+    miniPlayerArt.src = thumbnail || 'icon.png';
+    // hide mini player if we open full player
+    miniPlayer.style.display = 'none';
+    await originalPlayAudio(videoId, title, uploader, thumbnail);
+};
+
+// Update Mini play/pause icon
+const updateMiniPlayBtnIcon = (isPlaying) => {
+    if (isPlaying) {
+        miniPlayPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+    } else {
+        miniPlayPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+    }
+};
+
+// Sync mini button with main button
+nativePlayer.addEventListener('play', () => updateMiniPlayBtnIcon(true));
+nativePlayer.addEventListener('pause', () => updateMiniPlayBtnIcon(false));
+
+// --- Swipe Gestures ---
+let touchStartY = 0;
+let touchStartX = 0;
+
+playerOverlay.addEventListener('touchstart', e => {
+    touchStartY = e.touches[0].clientY;
+    touchStartX = e.touches[0].clientX;
+});
+playerOverlay.addEventListener('touchend', e => {
+    const touchEndY = e.changedTouches[0].clientY;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diffY = touchEndY - touchStartY;
+    const diffX = touchEndX - touchStartX;
     
-    // Exit PiP if active
-    if (document.pictureInPictureElement) {
-        document.exitPictureInPicture().catch(console.error);
+    // Swipe down to minimize
+    if (diffY > 50 && Math.abs(diffY) > Math.abs(diffX)) {
+        playerOverlay.classList.remove('active');
+        miniPlayer.style.display = 'flex';
+    }
+    
+    // Swipe left to next track
+    if (diffX < -50 && Math.abs(diffX) > Math.abs(diffY)) {
+        playNextTrack();
+    }
+    // Swipe right to prev track
+    if (diffX > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+        playPrevTrack();
+    }
+});
+
+miniPlayer.addEventListener('touchstart', e => {
+    touchStartY = e.touches[0].clientY;
+});
+miniPlayer.addEventListener('touchend', e => {
+    const touchEndY = e.changedTouches[0].clientY;
+    const diffY = touchEndY - touchStartY;
+    // Swipe up to maximize
+    if (diffY < -30) {
+        miniPlayer.style.display = 'none';
+        playerOverlay.classList.add('active');
     }
 });
 
@@ -920,14 +1004,45 @@ function fetchSuggestionsJSONP(query) {
     });
 }
 
-// Live Search Suggestions
+// Live Search Suggestions & History
 let suggestionTimeout;
+
+function getSearchHistory() {
+    try { return JSON.parse(localStorage.getItem('searchHistory')) || []; } catch { return []; }
+}
+function saveSearchHistory(query) {
+    if (!query.trim()) return;
+    let history = getSearchHistory();
+    history = history.filter(item => item !== query); // Remove duplicate
+    history.unshift(query);
+    if (history.length > 5) history.pop();
+    localStorage.setItem('searchHistory', JSON.stringify(history));
+}
+function showHistory() {
+    const history = getSearchHistory();
+    if (history.length > 0) {
+        searchSuggestions.innerHTML = `<div style="padding: 10px 15px; color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Recent Searches</div>` + 
+            history.map(text => 
+                `<div class="search-suggestion-item" onclick="applySuggestion('${text.replace(/'/g, "\\'")}')">
+                    <i class="fa-solid fa-clock-rotate-left"></i> ${text}
+                </div>`
+            ).join('');
+        searchSuggestions.style.display = 'flex';
+    } else {
+        searchSuggestions.style.display = 'none';
+    }
+}
+
+searchInput.addEventListener('focus', () => {
+    if (!searchInput.value.trim()) showHistory();
+});
+
 searchInput.addEventListener('input', (e) => {
     clearTimeout(suggestionTimeout);
     const query = e.target.value.trim();
     
     if (!query) {
-        searchSuggestions.style.display = 'none';
+        showHistory();
         return;
     }
 
@@ -955,6 +1070,7 @@ searchInput.addEventListener('input', (e) => {
 window.applySuggestion = function(text) {
     searchInput.value = text;
     searchSuggestions.style.display = 'none';
+    saveSearchHistory(text);
     searchVideos(text);
 };
 
@@ -967,13 +1083,17 @@ document.addEventListener('click', (e) => {
 
 searchBtn.addEventListener('click', () => {
     searchSuggestions.style.display = 'none';
-    searchVideos(searchInput.value);
+    const val = searchInput.value;
+    saveSearchHistory(val);
+    searchVideos(val);
 });
 
 searchInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         searchSuggestions.style.display = 'none';
-        searchVideos(searchInput.value);
+        const val = searchInput.value;
+        saveSearchHistory(val);
+        searchVideos(val);
     }
 });
 
