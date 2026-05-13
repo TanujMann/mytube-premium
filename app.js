@@ -31,13 +31,17 @@ window.onYouTubeIframeAPIReady = function() {
 
 function onYtPlayerStateChange(event) {
     if (event.data === YT.PlayerState.PLAYING) {
-        updatePlayBtnIcon(true);
-        updateMiniPlayBtnIcon(true);
+        if (window.updatePlayBtnIcon) window.updatePlayBtnIcon(true);
+        if (window.updateMiniPlayBtnIcon) window.updateMiniPlayBtnIcon(true);
         startYtProgressInterval();
     } else {
-        updatePlayBtnIcon(false);
-        updateMiniPlayBtnIcon(false);
+        if (window.updatePlayBtnIcon) window.updatePlayBtnIcon(false);
+        if (window.updateMiniPlayBtnIcon) window.updateMiniPlayBtnIcon(false);
         stopYtProgressInterval();
+    }
+    
+    if (event.data === YT.PlayerState.ENDED) {
+        if (typeof playNextTrack === 'function') playNextTrack();
     }
 }
 
@@ -213,7 +217,14 @@ const miniPlayerTitle = document.getElementById('miniPlayerTitle');
 const miniPlayerArtist = document.getElementById('miniPlayerArtist');
 const miniPlayPauseBtn = document.getElementById('miniPlayPauseBtn');
 const miniNextBtn = document.getElementById('miniNextBtn');
-const miniPlayerLeft = document.getElementById('miniPlayerLeft');const pipBtn = document.getElementById('pipBtn');
+const miniPlayerLeft = document.getElementById('miniPlayerLeft');
+const pipBtn = document.getElementById('pipBtn');
+
+const playPauseBtn = document.getElementById('playPauseBtn');
+const nextBtn = document.getElementById('nextBtn');
+const prevBtn = document.getElementById('prevBtn');
+const shuffleBtn = document.getElementById('shuffleBtn');
+const repeatBtn = document.getElementById('repeatBtn');
 const nativePlayer = document.getElementById('nativePlayer');
 const iframePlayer = document.getElementById('iframePlayer');
 const playerLoader = document.getElementById('playerLoader');
@@ -851,11 +862,16 @@ async function openVideo(videoId, title, uploader, thumbnail) {
         document.getElementById('playerActions').style.display = 'flex';
         document.getElementById('iframePlayer').style.display = 'block';
         
-        if (isYtPlayerReady && ytPlayer) {
-            ytPlayer.loadVideoById(videoId);
-        } else {
-            console.error("YT API not ready for fallback.");
-        }
+        const tryLoadYtVideo = (retries = 3) => {
+            if (isYtPlayerReady && ytPlayer && ytPlayer.loadVideoById) {
+                ytPlayer.loadVideoById(videoId);
+            } else if (retries > 0) {
+                setTimeout(() => tryLoadYtVideo(retries - 1), 500);
+            } else {
+                console.error("YT API not ready for fallback after retries.");
+            }
+        };
+        tryLoadYtVideo();
     } finally {
         playerLoader.style.display = 'none';
     }
@@ -903,9 +919,28 @@ async function fetchRelatedVideos(videoItem) {
     }
 }
 
+// Queue State
+let currentQueue = [];
+let currentQueueIndex = -1;
+
+function updateQueue(videos) {
+    currentQueue = videos.map(video => {
+        return {
+            id: video.url.includes('?v=') ? video.url.split('?v=')[1] : video.url.split('/').pop(),
+            title: video.title,
+            uploader: video.uploaderName,
+            thumbnail: video.thumbnail || (video.thumbnails && video.thumbnails[0]?.url) || ''
+        };
+    });
+    currentQueueIndex = -1;
+}
+
 // Render Related Videos in Player
 function renderRelatedVideos(videos) {
     const relatedContainer = document.getElementById('relatedVideos');
+    
+    updateQueue(videos);
+    
     if (!videos || videos.length === 0) {
         relatedContainer.innerHTML = '<p>No related videos found.</p>';
         return;
@@ -938,13 +973,6 @@ function renderRelatedVideos(videos) {
 }
 
 // --- Custom Player Controls Logic ---
-nativePlayer.addEventListener('play', () => {
-    playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-});
-
-nativePlayer.addEventListener('pause', () => {
-    playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-});
 
 function togglePlayPause() {
     if (nativePlayer.style.display !== 'none') {
@@ -964,6 +992,40 @@ function togglePlayPause() {
 }
 
 playPauseBtn.addEventListener('click', togglePlayPause);
+nextBtn.addEventListener('click', playNextTrack);
+prevBtn.addEventListener('click', playPrevTrack);
+
+function playNextTrack() {
+    if (currentQueue.length > 0) {
+        currentQueueIndex++;
+        if (currentQueueIndex >= currentQueue.length) currentQueueIndex = 0;
+        const nextTrack = currentQueue[currentQueueIndex];
+        playAudio(nextTrack.id, nextTrack.title, nextTrack.uploader, nextTrack.thumbnail);
+    }
+}
+
+function playPrevTrack() {
+    if (currentQueue.length > 0) {
+        currentQueueIndex--;
+        if (currentQueueIndex < 0) currentQueueIndex = currentQueue.length - 1;
+        const prevTrack = currentQueue[currentQueueIndex];
+        playAudio(prevTrack.id, prevTrack.title, prevTrack.uploader, prevTrack.thumbnail);
+    }
+}
+
+// Auto play next track when video ends
+nativePlayer.addEventListener('ended', playNextTrack);
+
+window.updatePlayBtnIcon = (isPlaying) => {
+    if (isPlaying) {
+        playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+    } else {
+        playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+    }
+};
+
+nativePlayer.addEventListener('play', () => updatePlayBtnIcon(true));
+nativePlayer.addEventListener('pause', () => updatePlayBtnIcon(false));
 
 nativePlayer.addEventListener('timeupdate', () => {
     const current = nativePlayer.currentTime;
