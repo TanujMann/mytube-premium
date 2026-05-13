@@ -283,9 +283,9 @@ function formatRelativeDate(uploaded) {
 }
 
 // Fetch and Render Trending (Randomized Home Feed)
-async function loadTrending() {
-    let customSinger = localStorage.getItem('favSinger') || null;
-    let customLang = localStorage.getItem('musicLang') || 'English';
+async function loadTrending(isPersonalized = true) {
+    let customSinger = isPersonalized ? (localStorage.getItem('favSinger') || null) : null;
+    let customLang = isPersonalized ? (localStorage.getItem('musicLang') || 'English') : 'English';
     
     let topArtist = customSinger;
     
@@ -843,13 +843,19 @@ async function openVideo(videoId, title, uploader, thumbnail) {
         if (data.error) throw new Error(data.error);
         
         let bestStream = null;
-        const combined = data.videoStreams.filter(s => s.videoOnly === false && s.mimeType.includes('mp4'));
-        if (combined.length > 0) {
-            bestStream = combined.sort((a, b) => b.quality.localeCompare(a.quality))[0].url;
+        
+        // Prioritize pure audio streams to save bandwidth and enable ad-free background listening (prevents iframe fallback ads)
+        const audioStreams = data.audioStreams;
+        if (audioStreams && audioStreams.length > 0) {
+            bestStream = audioStreams.sort((a, b) => b.bitrate - a.bitrate)[0].url;
         } else {
-            // Fallback to highest quality stream available
-            const streams = data.videoStreams.filter(s => s.mimeType.includes('mp4'));
-            if(streams.length > 0) bestStream = streams[0].url;
+            const combined = data.videoStreams.filter(s => s.videoOnly === false && s.mimeType.includes('mp4'));
+            if (combined.length > 0) {
+                bestStream = combined.sort((a, b) => b.quality.localeCompare(a.quality))[0].url;
+            } else {
+                const streams = data.videoStreams.filter(s => s.mimeType.includes('mp4'));
+                if(streams.length > 0) bestStream = streams[0].url;
+            }
         }
 
         // If no direct combined MP4, we can fallback to the HLS playlist, but Safari only supports it natively.
@@ -895,9 +901,9 @@ async function openVideo(videoId, title, uploader, thumbnail) {
             navigator.mediaSession.setActionHandler('seekforward', (details) => { nativePlayer.currentTime = Math.min(nativePlayer.currentTime + (details.seekOffset || 10), nativePlayer.duration); });
         }
 
-        musicArtwork.style.display = 'none';
-        nativePlayer.style.display = 'block';
-        nativePlayer.play();
+        musicArtwork.style.display = 'block';
+        nativePlayer.style.display = 'none';
+        nativePlayer.play().catch(e => console.log('Autoplay blocked:', e));
     } catch (err) {
         console.error("Native stream failed, falling back to Iframe", err);
         // Fallback to Iframe Player
@@ -1355,9 +1361,17 @@ function setupNav(navElement, mobileNavElement, loadFunc) {
     });
 }
 
-setupNav(navHome, mobileNavHome, () => { searchInput.value = ''; loadTrending(); });
+setupNav(navHome, mobileNavHome, () => { searchInput.value = ''; loadTrending(true); });
 setupNav(navRecent, mobileNavRecent, () => { searchInput.value = ''; loadRecent(); });
-setupNav(navTrending, mobileNavTrending, () => { searchInput.value = ''; loadTrending(); });
+setupNav(navTrending, mobileNavTrending, () => { searchInput.value = ''; loadTrending(false); });
+
+// Show Username in Header
+const storedName = localStorage.getItem('userName');
+const headerUserName = document.getElementById('headerUserName');
+if (storedName && headerUserName) {
+    headerUserName.textContent = storedName.split(' ')[0]; // Show first name
+    headerUserName.style.display = 'block';
+}
 
 // Init
 if (!localStorage.getItem('onboardingComplete')) {
