@@ -187,14 +187,12 @@
                 <button class="action-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button>
             </div>
             
-            <!-- Artwork -->
+            <!-- Artwork / Video Container -->
             <div class="music-artwork-container">
                 <img id="musicArtwork" src="" alt="Album Art">
+                <video id="nativePlayer" playsinline style="display: none; width: 100%; max-width: 350px; aspect-ratio: 1/1; object-fit: cover; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);"></video>
+                <iframe id="iframePlayer" style="display: none; width: 100%; max-width: 350px; aspect-ratio: 1/1; border: none; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);" allow="autoplay" allowfullscreen></iframe>
             </div>
-            
-            <!-- Hidden Media Players for Audio -->
-            <video id="nativePlayer" playsinline style="opacity: 0; position: absolute; width: 1px; height: 1px; pointer-events: none;"></video>
-            <iframe id="iframePlayer" style="display: none; opacity: 0; position: absolute; width: 1px; height: 1px; pointer-events: none;" allow="autoplay"></iframe>
 
             <div class="player-controls" id="playerLoader" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100;">
                 <i class="fa-solid fa-circle-notch fa-spin"></i> Loading...

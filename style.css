@@ -877,7 +877,8 @@ h2#sectionTitle {
     width: 100%;
     height: 100vh;
     height: 100dvh;
-    background: var(--bg-dark);
+    background: linear-gradient(to bottom, #3f3f46, #18181b);
+    color: white;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -891,6 +892,10 @@ h2#sectionTitle {
     padding: 1.5rem;
     padding-top: env(safe-area-inset-top, 2rem);
     z-index: 10;
+    color: white;
+}
+.music-player-header .action-btn {
+    color: white;
 }
 
 #musicPlayerHeaderTitle {
@@ -905,10 +910,10 @@ h2#sectionTitle {
     justify-content: center;
     align-items: center;
     padding: 2rem;
-    padding-bottom: 300px; /* Leave space for bottom sheet */
+    padding-bottom: 250px; /* Reduced from 300px so it fits better */
 }
 
-#musicArtwork {
+#musicArtwork, #nativePlayer {
     width: 100%;
     max-width: 350px;
     aspect-ratio: 1 / 1;
@@ -921,13 +926,14 @@ h2#sectionTitle {
 .music-controls-sheet {
     position: absolute;
     bottom: 0; left: 0; right: 0;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 30px 30px 0 0;
     padding: 2rem;
     padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid rgba(255,255,255,0.1);
+    color: white;
 }
 
 .drag-handle {
@@ -953,7 +959,7 @@ h2#sectionTitle {
 }
 .music-info p {
     font-size: 1rem;
-    color: var(--text-secondary);
+    color: #ccc;
 }
 
 .progress-container {
@@ -977,7 +983,7 @@ h2#sectionTitle {
     display: flex;
     justify-content: space-between;
     font-size: 0.75rem;
-    color: var(--text-secondary);
+    color: #ccc;
 }
 
 .music-actions {

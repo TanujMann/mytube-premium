@@ -669,7 +669,8 @@ async function openVideo(videoId, title, uploader, thumbnail) {
     
     // Reset players and unlock audio context for iOS
     iframePlayer.style.display = 'none';
-    nativePlayer.style.display = 'block';
+    nativePlayer.style.display = 'none';
+    musicArtwork.style.display = 'block';
     iframePlayer.src = '';
     nativePlayer.src = '';
     
@@ -782,12 +783,14 @@ async function openVideo(videoId, title, uploader, thumbnail) {
             navigator.mediaSession.setActionHandler('seekforward', (details) => { nativePlayer.currentTime = Math.min(nativePlayer.currentTime + (details.seekOffset || 10), nativePlayer.duration); });
         }
 
+        musicArtwork.style.display = 'none';
         nativePlayer.style.display = 'block';
         nativePlayer.play();
     } catch (err) {
         console.error("Native stream failed, falling back to Iframe", err);
         // Fallback to Iframe Player
         nativePlayer.style.display = 'none';
+        musicArtwork.style.display = 'none';
         iframePlayer.style.display = 'block';
         pipBtn.style.display = 'none'; // Hide PiP because iOS blocks it for iframes
         // Add playsinline=1 so iOS allows autoplay in the iframe
