@@ -315,7 +315,7 @@ async function loadTrending() {
                 // Personalized search based on top artist and language
                 let searchQuery = '';
                 if(topArtist) searchQuery += topArtist + ' ';
-                searchQuery += customLang + ' songs music';
+                searchQuery += customLang + ' official video -mashup -jukebox -nonstop -"best of" -collection -mix';
                 
                 apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`;
                 
@@ -368,7 +368,7 @@ async function loadTrending() {
         if (topArtist || customLang !== 'English') {
             let searchQuery = '';
             if(topArtist) searchQuery += topArtist + ' ';
-            searchQuery += customLang + ' official music';
+            searchQuery += customLang + ' official music -mashup -jukebox -nonstop -mix';
             response = await fetchApi(`/search?q=${encodeURIComponent(searchQuery)}&filter=music_songs`);
             const data = await response.json();
             renderVideos(data.items);
