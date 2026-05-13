@@ -1,8 +1,10 @@
 const API_INSTANCES = [
+    'https://pipedapi.kavin.rocks',
     'https://pipedapi.lunar.icu',
     'https://pipedapi.smnz.de',
     'https://pipedapi.adminforge.de',
-    'https://pipedapi.kavin.rocks'
+    'https://pipedapi.simple-fi.com',
+    'https://piped-api.garudalinux.org'
 ];
 let API_BASE = null;
 const YT_API_KEY = localStorage.getItem('yt_api_key');
@@ -689,7 +691,7 @@ function renderVideos(videos) {
     const list = items.slice(5);
 
     featuredMusic.innerHTML = featured.map(track => `
-        <div class="featured-card" style="background-image: url('${track.thumbnail}')" onclick="openVideo('${track.id}', '${track.title.replace(/'/g, "\\'")}', '${track.artist.replace(/'/g, "\\'")}', '${track.thumbnail}')">
+        <div class="featured-card" style="background-image: url('${track.thumbnail}')" onclick="openVideo('${track.id}', '${track.title.replace(/'/g, "\\'").replace(/"/g, "&quot;")}', '${track.artist.replace(/'/g, "\\'").replace(/"/g, "&quot;")}', '${track.thumbnail}')">
             <div class="featured-card-info">
                 <h3 class="featured-card-title">${track.title}</h3>
                 <p class="featured-card-artist">${track.artist}</p>
@@ -699,7 +701,7 @@ function renderVideos(videos) {
     `).join('');
 
     musicList.innerHTML = list.map(track => `
-        <div class="music-list-item" onclick="openVideo('${track.id}', '${track.title.replace(/'/g, "\\'")}', '${track.artist.replace(/'/g, "\\'")}', '${track.thumbnail}')">
+        <div class="music-list-item" onclick="openVideo('${track.id}', '${track.title.replace(/'/g, "\\'").replace(/"/g, "&quot;")}', '${track.artist.replace(/'/g, "\\'").replace(/"/g, "&quot;")}', '${track.thumbnail}')">
             <img src="${track.thumbnail}" alt="art" class="music-list-img">
             <div class="music-list-info">
                 <div class="music-list-title">${track.title}</div>
@@ -884,8 +886,7 @@ async function openVideo(videoId, title, uploader, thumbnail) {
                 }).catch(console.error);
         }
 
-        if (!API_BASE && !YT_API_KEY) await findWorkingInstance();
-        if (YT_API_KEY && !API_BASE) API_BASE = API_INSTANCES[0]; 
+        if (!API_BASE) await findWorkingInstance();
 
         const response = await fetchApi(`/streams/${videoId}`);
         const data = await response.json();

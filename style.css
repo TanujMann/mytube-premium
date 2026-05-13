@@ -1090,7 +1090,7 @@ h2#sectionTitle {
 
     .mini-player {
         position: fixed;
-        bottom: 60px; /* Above bottom nav */
+        bottom: calc(65px + env(safe-area-inset-bottom, 0px)); /* Above bottom nav */
         left: 10px;
         right: 10px;
         height: 60px;
