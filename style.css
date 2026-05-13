@@ -892,7 +892,7 @@ h2#sectionTitle {
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem;
-    padding-top: env(safe-area-inset-top, 2rem);
+    padding-top: calc(2rem + env(safe-area-inset-top, 0px));
     z-index: 10;
     color: white;
 }
