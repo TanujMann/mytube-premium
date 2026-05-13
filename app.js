@@ -238,6 +238,15 @@ async function loadTrending() {
         musicList.innerHTML = '<p>Error loading videos. Please try again later.</p>';
     } finally {
         loader.style.display = 'none';
+        
+        // Hide Splash Screen on first load
+        const splashScreen = document.getElementById('splashScreen');
+        if (splashScreen) {
+            setTimeout(() => {
+                splashScreen.style.opacity = '0';
+                setTimeout(() => splashScreen.remove(), 500);
+            }, 800); // Give it a slight delay so it looks intentional
+        }
     }
 }
 
