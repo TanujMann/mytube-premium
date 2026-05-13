@@ -409,7 +409,7 @@ async function searchVideos(query) {
 
     try {
         if (YT_API_KEY) {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=30&key=${YT_API_KEY}`, { cache: 'no-store' });
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`, { cache: 'no-store' });
             const data = await res.json();
             if (data.error) throw new Error(data.error.message);
             const formatted = data.items.map(item => ({
@@ -425,7 +425,7 @@ async function searchVideos(query) {
         }
 
         if (!API_BASE) await findWorkingInstance();
-        const response = await fetchApi(`/search?q=${encodeURIComponent(query)}&filter=all`);
+        const response = await fetchApi(`/search?q=${encodeURIComponent(query)}&filter=music_songs`);
         const data = await response.json();
         renderVideos(data.items);
     } catch (err) {
@@ -944,7 +944,7 @@ async function fetchRelatedVideos(videoItem) {
     
     const keyword = encodeURIComponent(query);
     try {
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${keyword}&type=video&maxResults=15&key=${YT_API_KEY}`);
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${keyword}&type=video&videoCategoryId=10&maxResults=15&key=${YT_API_KEY}`);
         const data = await res.json();
         if (data.error) throw new Error(data.error.message);
         
