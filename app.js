@@ -18,25 +18,61 @@ const closeSettingsBtn = document.getElementById('closeSettingsBtn');
 
 // Onboarding Logic
 const onboardingModal = document.getElementById('onboardingModal');
+const obStep1 = document.getElementById('obStep1');
+const obStep2 = document.getElementById('obStep2');
+const obUsernameInput = document.getElementById('obUsernameInput');
+const obAgeInput = document.getElementById('obAgeInput');
+const obNextBtn = document.getElementById('obNextBtn');
 const obStartBtn = document.getElementById('obStartBtn');
 const pills = document.querySelectorAll('.pill');
 
+obNextBtn.addEventListener('click', () => {
+    const username = obUsernameInput.value.trim();
+    const age = obAgeInput.value.trim();
+    if (!username || !age) {
+        alert("Please enter your name and age.");
+        return;
+    }
+    localStorage.setItem('userName', username);
+    localStorage.setItem('userAge', age);
+    
+    obStep1.style.display = 'none';
+    obStep2.style.display = 'flex';
+});
+
+function checkSelectionReqs() {
+    const langs = document.querySelectorAll('.pill[data-type="lang"].selected').length;
+    const artists = document.querySelectorAll('.pill[data-type="artist"].selected').length;
+    
+    if (langs >= 3 && artists >= 3) {
+        obStartBtn.disabled = false;
+        obStartBtn.style.background = 'var(--accent)';
+        obStartBtn.style.cursor = 'pointer';
+        obStartBtn.style.boxShadow = '0 10px 20px rgba(239, 68, 68, 0.3)';
+    } else {
+        obStartBtn.disabled = true;
+        obStartBtn.style.background = '#cbd5e1';
+        obStartBtn.style.cursor = 'not-allowed';
+        obStartBtn.style.boxShadow = 'none';
+    }
+}
+
 pills.forEach(pill => {
     pill.addEventListener('click', () => {
-        // Toggle selection logic: only allow one per category or just update styling
-        const type = pill.dataset.type;
-        // Deselect others of same type
-        document.querySelectorAll(`.pill[data-type="${type}"]`).forEach(p => p.classList.remove('selected'));
-        pill.classList.add('selected');
+        // Multi-select toggle
+        pill.classList.toggle('selected');
+        checkSelectionReqs();
     });
 });
 
 obStartBtn.addEventListener('click', () => {
-    const selectedLang = document.querySelector('.pill[data-type="lang"].selected');
-    const selectedArtist = document.querySelector('.pill[data-type="artist"].selected');
+    if (obStartBtn.disabled) return;
+
+    const selectedLangs = Array.from(document.querySelectorAll('.pill[data-type="lang"].selected')).map(p => p.dataset.value);
+    const selectedArtists = Array.from(document.querySelectorAll('.pill[data-type="artist"].selected')).map(p => p.dataset.value);
     
-    const singer = selectedArtist ? selectedArtist.dataset.value : 'The Weeknd';
-    const lang = selectedLang ? selectedLang.dataset.value : 'English';
+    const singer = selectedArtists.join(', ');
+    const lang = selectedLangs.join(', ');
     
     localStorage.setItem('favSinger', singer);
     localStorage.setItem('musicLang', lang);

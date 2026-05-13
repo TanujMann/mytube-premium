@@ -29,37 +29,56 @@
     <div id="onboardingModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #F4F5F7; z-index: 9998; flex-direction: column; align-items: center; padding: 2rem 1rem; box-sizing: border-box; overflow-y: auto;">
         <img src="icon.png" alt="Logo" style="width: 80px; height: 80px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); margin-bottom: 1rem; margin-top: 2rem;">
         <h2 style="color: #1A202C; font-size: 2rem; margin-bottom: 0.5rem; text-align: center;">Welcome to BAJAAO !!</h2>
-        <p style="color: #718096; text-align: center; margin-bottom: 2rem; max-width: 400px; font-size: 0.95rem;">Let's customize your personal mix. Select what you love listening to.</p>
-        
-        <div style="width: 100%; max-width: 500px; margin-bottom: 1.5rem;">
-            <label style="color: #1A202C; font-weight: 700; display: block; margin-bottom: 12px; font-size: 1.1rem;">1. Select Music Language</label>
-            <div id="obLangPills" style="display: flex; flex-wrap: wrap; gap: 10px;">
-                <div class="pill" data-type="lang" data-value="English">English</div>
-                <div class="pill" data-type="lang" data-value="Punjabi">Punjabi</div>
-                <div class="pill" data-type="lang" data-value="Hindi">Hindi</div>
-                <div class="pill" data-type="lang" data-value="Spanish">Spanish</div>
-                <div class="pill" data-type="lang" data-value="K-Pop">K-Pop</div>
-            </div>
+        <div id="obStep1" style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 1rem;">
+            <p style="color: #718096; text-align: center; margin-bottom: 1rem; font-size: 0.95rem;">First, let's get to know you.</p>
+            
+            <label style="color: #1A202C; font-weight: 600; display: block; margin-bottom: -5px;">Username / Name</label>
+            <input type="text" id="obUsernameInput" placeholder="e.g. Tanuj" style="width: 100%; padding: 15px; background: white; border: 1px solid #e2e8f0; color: #111; border-radius: 12px; font-size: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+            
+            <label style="color: #1A202C; font-weight: 600; display: block; margin-bottom: -5px; margin-top: 10px;">Age</label>
+            <input type="number" id="obAgeInput" placeholder="e.g. 21" style="width: 100%; padding: 15px; background: white; border: 1px solid #e2e8f0; color: #111; border-radius: 12px; font-size: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+            
+            <button id="obNextBtn" style="width: 100%; margin-top: 20px; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);">Next</button>
         </div>
-        
-        <div style="width: 100%; max-width: 500px; margin-bottom: 3rem;">
-            <label style="color: #1A202C; font-weight: 700; display: block; margin-bottom: 12px; font-size: 1.1rem;">2. Select Favorite Artists</label>
-            <div id="obArtistPills" style="display: flex; flex-wrap: wrap; gap: 10px;">
-                <div class="pill" data-type="artist" data-value="The Weeknd">The Weeknd</div>
-                <div class="pill" data-type="artist" data-value="Drake">Drake</div>
-                <div class="pill" data-type="artist" data-value="Taylor Swift">Taylor Swift</div>
-                <div class="pill" data-type="artist" data-value="Diljit Dosanjh">Diljit Dosanjh</div>
-                <div class="pill" data-type="artist" data-value="Karan Aujla">Karan Aujla</div>
-                <div class="pill" data-type="artist" data-value="Sidhu Moose Wala">Sidhu Moose Wala</div>
-                <div class="pill" data-type="artist" data-value="Arijit Singh">Arijit Singh</div>
-                <div class="pill" data-type="artist" data-value="Badshah">Badshah</div>
-                <div class="pill" data-type="artist" data-value="Travis Scott">Travis Scott</div>
-                <div class="pill" data-type="artist" data-value="Post Malone">Post Malone</div>
-                <div class="pill" data-type="artist" data-value="Dua Lipa">Dua Lipa</div>
+
+        <div id="obStep2" style="width: 100%; max-width: 500px; display: none; flex-direction: column;">
+            <p style="color: #718096; text-align: center; margin-bottom: 2rem; font-size: 0.95rem;">Let's customize your personal mix. Select what you love listening to.</p>
+            
+            <div style="width: 100%; margin-bottom: 1.5rem;">
+                <label style="color: #1A202C; font-weight: 700; display: block; margin-bottom: 12px; font-size: 1.1rem;">1. Select Music Language (at least 3)</label>
+                <div id="obLangPills" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <div class="pill" data-type="lang" data-value="English">English</div>
+                    <div class="pill" data-type="lang" data-value="Punjabi">Punjabi</div>
+                    <div class="pill" data-type="lang" data-value="Hindi">Hindi</div>
+                    <div class="pill" data-type="lang" data-value="Spanish">Spanish</div>
+                    <div class="pill" data-type="lang" data-value="K-Pop">K-Pop</div>
+                    <div class="pill" data-type="lang" data-value="Haryanvi">Haryanvi</div>
+                    <div class="pill" data-type="lang" data-value="Tamil">Tamil</div>
+                    <div class="pill" data-type="lang" data-value="Telugu">Telugu</div>
+                </div>
             </div>
+            
+            <div style="width: 100%; margin-bottom: 3rem;">
+                <label style="color: #1A202C; font-weight: 700; display: block; margin-bottom: 12px; font-size: 1.1rem;">2. Select Favorite Artists (at least 3)</label>
+                <div id="obArtistPills" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <div class="pill" data-type="artist" data-value="The Weeknd">The Weeknd</div>
+                    <div class="pill" data-type="artist" data-value="Drake">Drake</div>
+                    <div class="pill" data-type="artist" data-value="Taylor Swift">Taylor Swift</div>
+                    <div class="pill" data-type="artist" data-value="Diljit Dosanjh">Diljit Dosanjh</div>
+                    <div class="pill" data-type="artist" data-value="Karan Aujla">Karan Aujla</div>
+                    <div class="pill" data-type="artist" data-value="Sidhu Moose Wala">Sidhu Moose Wala</div>
+                    <div class="pill" data-type="artist" data-value="Arijit Singh">Arijit Singh</div>
+                    <div class="pill" data-type="artist" data-value="Badshah">Badshah</div>
+                    <div class="pill" data-type="artist" data-value="Travis Scott">Travis Scott</div>
+                    <div class="pill" data-type="artist" data-value="Post Malone">Post Malone</div>
+                    <div class="pill" data-type="artist" data-value="Dua Lipa">Dua Lipa</div>
+                    <div class="pill" data-type="artist" data-value="Shubh">Shubh</div>
+                    <div class="pill" data-type="artist" data-value="AP Dhillon">AP Dhillon</div>
+                </div>
+            </div>
+            
+            <button id="obStartBtn" disabled style="width: 100%; max-width: 400px; padding: 15px; background: #cbd5e1; color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: not-allowed; transition: all 0.3s; margin: 0 auto 2rem auto;">Get Started</button>
         </div>
-        
-        <button id="obStartBtn" style="width: 100%; max-width: 400px; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3); margin-bottom: 2rem;">Get Started</button>
     </div>
 
     <nav class="navbar">
