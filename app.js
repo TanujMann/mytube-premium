@@ -7,6 +7,58 @@ const API_INSTANCES = [
 let API_BASE = null;
 const YT_API_KEY = localStorage.getItem('yt_api_key');
 
+// YouTube Iframe API Setup
+let ytPlayer;
+let isYtPlayerReady = false;
+let ytProgressInterval;
+
+window.onYouTubeIframeAPIReady = function() {
+    ytPlayer = new YT.Player('iframePlayer', {
+        height: '100%',
+        width: '100%',
+        playerVars: {
+            'playsinline': 1,
+            'controls': 0, // hide yt controls since we use custom
+            'disablekb': 1,
+            'rel': 0
+        },
+        events: {
+            'onReady': () => { isYtPlayerReady = true; },
+            'onStateChange': onYtPlayerStateChange
+        }
+    });
+};
+
+function onYtPlayerStateChange(event) {
+    if (event.data === YT.PlayerState.PLAYING) {
+        updatePlayBtnIcon(true);
+        updateMiniPlayBtnIcon(true);
+        startYtProgressInterval();
+    } else {
+        updatePlayBtnIcon(false);
+        updateMiniPlayBtnIcon(false);
+        stopYtProgressInterval();
+    }
+}
+
+function startYtProgressInterval() {
+    stopYtProgressInterval();
+    ytProgressInterval = setInterval(() => {
+        if (!ytPlayer || !ytPlayer.getCurrentTime) return;
+        const current = ytPlayer.getCurrentTime();
+        const duration = ytPlayer.getDuration();
+        if (duration > 0) {
+            document.getElementById('currentTime').textContent = formatTime(current);
+            document.getElementById('totalTime').textContent = formatTime(duration);
+            document.getElementById('progressBarFill').style.width = `${(current / duration) * 100}%`;
+        }
+    }, 500);
+}
+
+function stopYtProgressInterval() {
+    clearInterval(ytProgressInterval);
+}
+
 // Settings Modal Logic
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsModal = document.getElementById('settingsModal');
@@ -668,10 +720,10 @@ async function openVideo(videoId, title, uploader, thumbnail) {
     playerOverlay.classList.add('active');
     
     // Reset players and unlock audio context for iOS
-    iframePlayer.style.display = 'none';
+    if (ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
+    document.getElementById('iframePlayer').style.display = 'none';
     nativePlayer.style.display = 'none';
     musicArtwork.style.display = 'block';
-    iframePlayer.src = '';
     nativePlayer.src = '';
     
     // Set UI immediately from passed data
@@ -795,12 +847,15 @@ async function openVideo(videoId, title, uploader, thumbnail) {
         // Fallback to Iframe Player
         nativePlayer.style.display = 'none';
         musicArtwork.style.display = 'none';
-        document.getElementById('playerProgress').style.display = 'none';
-        document.getElementById('playerActions').style.display = 'none';
-        iframePlayer.style.display = 'block';
-        pipBtn.style.display = 'none'; // Hide PiP because iOS blocks it for iframes
-        // Add playsinline=1 so iOS allows autoplay in the iframe
-        iframePlayer.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1`;
+        document.getElementById('playerProgress').style.display = 'block';
+        document.getElementById('playerActions').style.display = 'flex';
+        document.getElementById('iframePlayer').style.display = 'block';
+        
+        if (isYtPlayerReady && ytPlayer) {
+            ytPlayer.loadVideoById(videoId);
+        } else {
+            console.error("YT API not ready for fallback.");
+        }
     } finally {
         playerLoader.style.display = 'none';
     }
@@ -891,13 +946,24 @@ nativePlayer.addEventListener('pause', () => {
     playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
 });
 
-playPauseBtn.addEventListener('click', () => {
-    if (nativePlayer.paused) {
-        nativePlayer.play();
-    } else {
-        nativePlayer.pause();
+function togglePlayPause() {
+    if (nativePlayer.style.display !== 'none') {
+        if (nativePlayer.paused) {
+            nativePlayer.play();
+        } else {
+            nativePlayer.pause();
+        }
+    } else if (ytPlayer && ytPlayer.getPlayerState) {
+        const state = ytPlayer.getPlayerState();
+        if (state === YT.PlayerState.PLAYING) {
+            ytPlayer.pauseVideo();
+        } else {
+            ytPlayer.playVideo();
+        }
     }
-});
+}
+
+playPauseBtn.addEventListener('click', togglePlayPause);
 
 nativePlayer.addEventListener('timeupdate', () => {
     const current = nativePlayer.currentTime;
@@ -914,7 +980,12 @@ const progressBarBg = document.getElementById('progressBarBg');
 progressBarBg.addEventListener('click', (e) => {
     const rect = progressBarBg.getBoundingClientRect();
     const pos = (e.clientX - rect.left) / rect.width;
-    nativePlayer.currentTime = pos * nativePlayer.duration;
+    
+    if (nativePlayer.style.display !== 'none') {
+        nativePlayer.currentTime = pos * nativePlayer.duration;
+    } else if (ytPlayer && ytPlayer.getDuration) {
+        ytPlayer.seekTo(pos * ytPlayer.getDuration(), true);
+    }
 });
 
 // Close Player overrides -> Minimizes the player
