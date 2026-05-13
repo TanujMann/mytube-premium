@@ -59,9 +59,11 @@ async function findWorkingInstance() {
 }
 
 // DOM Elements
-const videoGrid = document.getElementById('videoGrid');
 const loader = document.getElementById('loader');
 const sectionTitle = document.getElementById('sectionTitle');
+const musicFeedContainer = document.getElementById('musicFeedContainer');
+const featuredMusic = document.getElementById('featuredMusic');
+const musicList = document.getElementById('musicList');
 const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
 const searchSuggestions = document.getElementById('searchSuggestions');
@@ -396,40 +398,51 @@ shortsReelsContainer.addEventListener('wheel', (e) => {
 // Render Videos to Grids
 function renderVideos(videos) {
     if (!videos || videos.length === 0) {
-        videoGrid.innerHTML = '<p>No videos found.</p>';
+        musicFeedContainer.style.display = 'block';
+        featuredMusic.innerHTML = '';
+        musicList.innerHTML = '<p>No music found.</p>';
         return;
     }
 
-    const html = videos.filter(v => v.type === 'stream' || YT_API_KEY).map(video => {
-        const thumbnail = video.thumbnail || (video.thumbnails && video.thumbnails[0]?.url) || '';
-        const duration = typeof video.duration === 'string' ? video.duration : formatTime(video.duration);
-        const views = video.views ? `${formatViews(video.views)} views` : '';
-        const time = formatRelativeDate(video.uploadedDate);
-        const avatar = video.uploaderAvatar || 'https://via.placeholder.com/36';
-        
-        return `
-            <div class="video-card" onclick="openVideo('${video.url.split('?v=')[1]}')">
-                <div class="thumbnail">
-                    <img src="${thumbnail}" alt="${video.title}" loading="lazy">
-                    <span class="duration">${duration}</span>
-                </div>
-                <div class="video-details">
-                    <img class="channel-avatar" src="${avatar}" alt="${video.uploaderName}">
-                    <div class="video-info-meta">
-                        <h3 class="video-title" title="${video.title}">${video.title}</h3>
-                        <p class="channel-name">${video.uploaderName}</p>
-                        <p class="video-stats">${views} • ${time}</p>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
+    const items = videos.filter(v => v.type === 'stream' || YT_API_KEY).map(video => {
+        const id = video.url.split('?v=')[1] || video.url.split('/watch?v=')[1];
+        return {
+            id,
+            title: video.title,
+            artist: video.uploaderName,
+            thumbnail: video.thumbnail || (video.thumbnails && video.thumbnails[0]?.url) || '',
+            duration: typeof video.duration === 'string' ? video.duration : formatTime(video.duration),
+            url: video.url
+        };
+    });
 
-    videoGrid.innerHTML = html;
+    const featured = items.slice(0, 5);
+    const list = items.slice(5);
+
+    featuredMusic.innerHTML = featured.map(track => `
+        <div class="featured-card" style="background-image: url('${track.thumbnail}')" onclick="openVideo('${track.id}', '${track.title.replace(/'/g, "\\'")}', '${track.artist.replace(/'/g, "\\'")}', '${track.thumbnail}')">
+            <div class="featured-card-info">
+                <h3 class="featured-card-title">${track.title}</h3>
+                <p class="featured-card-artist">${track.artist}</p>
+            </div>
+            <div class="featured-play-btn"><i class="fa-solid fa-play"></i></div>
+        </div>
+    `).join('');
+
+    musicList.innerHTML = list.map(track => `
+        <div class="music-list-item" onclick="openVideo('${track.id}', '${track.title.replace(/'/g, "\\'")}', '${track.artist.replace(/'/g, "\\'")}', '${track.thumbnail}')">
+            <img src="${track.thumbnail}" alt="art" class="music-list-img">
+            <div class="music-list-info">
+                <div class="music-list-title">${track.title}</div>
+                <div class="music-list-artist">${track.artist}</div>
+            </div>
+            <div class="music-list-duration">${track.duration}</div>
+        </div>
+    `).join('');
 }
 
 // Open and Play Video
-async function openVideo(videoId) {
+async function openVideo(videoId, title, uploader, thumbnail) {
     if (!videoId) return;
 
     playerOverlay.classList.add('active');
@@ -437,9 +450,23 @@ async function openVideo(videoId) {
     // Reset players and unlock audio context for iOS
     iframePlayer.style.display = 'none';
     nativePlayer.style.display = 'block';
-    pipBtn.style.display = 'flex'; // Show PiP by default for native player
     iframePlayer.src = '';
     nativePlayer.src = '';
+    
+    // Set UI immediately from passed data
+    playerTitle.textContent = title || 'Loading...';
+    playerChannelName.textContent = uploader || '';
+    if (thumbnail) {
+        musicArtwork.src = thumbnail;
+    } else {
+        musicArtwork.src = 'icon.png';
+    }
+    
+    // Reset Progress Bar
+    document.getElementById('progressBarFill').style.width = '0%';
+    document.getElementById('currentTime').textContent = '0:00';
+    document.getElementById('totalTime').textContent = '0:00';
+    playPauseBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
     
     // iOS Autoplay unlock trick (must be synchronous with click)
     nativePlayer.play().catch(() => {});
@@ -447,9 +474,7 @@ async function openVideo(videoId) {
     
     playerLoader.style.display = 'flex';
     
-    // Reset info
-    playerTitle.textContent = 'Loading...';
-    playerChannelName.textContent = '';
+    // Reset legacy info to prevent errors
     playerViews.textContent = '';
     playerDescription.textContent = '';
     playerChannelAvatar.src = '';
@@ -502,13 +527,14 @@ async function openVideo(videoId) {
             nativePlayer.src = data.hls;
         }
 
-        // Only update UI from Piped if YouTube API didn't already do it
+        // Only update legacy UI from Piped if YouTube API didn't already do it
         if (!YT_API_KEY) {
             playerTitle.textContent = data.title;
             playerChannelName.textContent = data.uploader;
             playerViews.textContent = `${formatViews(data.views)} views`;
             playerDescription.textContent = data.description || '';
             playerChannelAvatar.src = data.uploaderAvatar || 'https://via.placeholder.com/48';
+            if(data.thumbnailUrl) musicArtwork.src = data.thumbnailUrl;
             
             // If Piped works, render related streams directly
             if (data.relatedStreams && data.relatedStreams.length > 0) {
@@ -521,13 +547,11 @@ async function openVideo(videoId) {
         // Setup Media Session for Background Play (iOS/Android Lock Screen)
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
-                title: data.title,
-                artist: data.uploader,
-                album: 'MyTube Premium',
+                title: data.title || title,
+                artist: data.uploader || uploader,
+                album: 'MyMusic Premium',
                 artwork: [
-                    { src: data.uploaderAvatar || 'icon.png', sizes: '96x96', type: 'image/png' },
-                    { src: data.uploaderAvatar || 'icon.png', sizes: '256x256', type: 'image/png' },
-                    { src: data.uploaderAvatar || 'icon.png', sizes: '512x512', type: 'image/png' }
+                    { src: thumbnail || data.thumbnailUrl || 'icon.png', sizes: '512x512', type: 'image/png' }
                 ]
             });
 
@@ -629,11 +653,46 @@ function renderRelatedVideos(videos) {
     relatedContainer.innerHTML = html;
 }
 
-// Close Video Player
+// --- Custom Player Controls Logic ---
+nativePlayer.addEventListener('play', () => {
+    playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+});
+
+nativePlayer.addEventListener('pause', () => {
+    playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+});
+
+playPauseBtn.addEventListener('click', () => {
+    if (nativePlayer.paused) {
+        nativePlayer.play();
+    } else {
+        nativePlayer.pause();
+    }
+});
+
+nativePlayer.addEventListener('timeupdate', () => {
+    const current = nativePlayer.currentTime;
+    const duration = nativePlayer.duration;
+    if (duration) {
+        const progressPercent = (current / duration) * 100;
+        document.getElementById('progressBarFill').style.width = `${progressPercent}%`;
+        document.getElementById('currentTime').textContent = formatTime(Math.floor(current));
+        document.getElementById('totalTime').textContent = formatTime(Math.floor(duration));
+    }
+});
+
+const progressBarBg = document.getElementById('progressBarBg');
+progressBarBg.addEventListener('click', (e) => {
+    const rect = progressBarBg.getBoundingClientRect();
+    const pos = (e.clientX - rect.left) / rect.width;
+    nativePlayer.currentTime = pos * nativePlayer.duration;
+});
+
+// Close Player overrides
 closePlayerBtn.addEventListener('click', () => {
     playerOverlay.classList.remove('active');
     nativePlayer.pause();
-    nativePlayer.src = '';
+    iframePlayer.src = '';
     
     // Exit PiP if active
     if (document.pictureInPictureElement) {

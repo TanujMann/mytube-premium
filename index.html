@@ -20,8 +20,8 @@
 <body>
     <nav class="navbar">
         <div class="logo">
-            <i class="fa-solid fa-play-circle gradient-text"></i>
-            <span>MyTube</span>
+            <i class="fa-solid fa-music gradient-text"></i>
+            <span>MyMusic</span>
         </div>
         <div class="search-container">
             <div class="search-input-wrapper">
@@ -49,10 +49,11 @@
     </div>
 
     <div class="layout">
-        <aside class="sidebar">
-            <a href="#" class="nav-item active" id="navHome"><i class="fa-solid fa-house"></i> Home</a>
-            <a href="#" class="nav-item" id="navShorts"><i class="fa-solid fa-bolt"></i> Shorts</a>
-            <a href="#" class="nav-item" id="navTrending"><i class="fa-solid fa-fire"></i> Trending</a>
+        <aside class="sidebar vertical-sidebar">
+            <a href="#" class="nav-item active" id="navHome"><span>Top</span></a>
+            <a href="#" class="nav-item" id="navTrending"><span>Album</span></a>
+            <a href="#" class="nav-item" id="navShorts"><span>Recent</span></a>
+            <div class="sidebar-brand-text">MyMusic Collection</div>
         </aside>
 
         <main class="content" id="mainContent">
@@ -61,11 +62,20 @@
                 <i class="fa-solid fa-arrow-rotate-right"></i>
             </div>
             
-            <h2 id="sectionTitle">Trending Now</h2>
             <div id="loader" class="loader" style="display: none;"></div>
             
-            <div class="video-grid" id="videoGrid">
-                <!-- Videos will be injected here -->
+            <div class="music-feed-container" id="musicFeedContainer">
+                <h2 id="sectionTitle" class="music-section-title">Music</h2>
+                
+                <!-- Horizontal Featured Cards -->
+                <div class="featured-scroll" id="featuredMusic">
+                    <!-- Featured music injected here -->
+                </div>
+                
+                <!-- Vertical List -->
+                <div class="vertical-music-list" id="musicList">
+                    <!-- Music list injected here -->
+                </div>
             </div>
 
             <!-- Shorts Reels UI (Hidden by default) -->
@@ -95,43 +105,70 @@
         </main>
     </div>
 
-    <!-- Video Player Overlay -->
+    <!-- Music Player Overlay -->
     <div class="player-overlay" id="playerOverlay">
-        <div class="player-container">
-            <div class="player-actions">
-                <button class="action-btn" id="pipBtn" title="Picture in Picture"><i class="fa-solid fa-square-up-right"></i></button>
-                <button class="action-btn close-player" id="closePlayer"><i class="fa-solid fa-times"></i></button>
+        <div class="music-player-container">
+            <!-- Top Header -->
+            <div class="music-player-header">
+                <button class="action-btn close-player" id="closePlayer"><i class="fa-solid fa-chevron-down"></i></button>
+                <span id="musicPlayerHeaderTitle">Now Playing</span>
+                <button class="action-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button>
             </div>
-            <div class="video-wrapper">
-                <!-- Native Video Player -->
-            <video id="nativePlayer" playsinline controls></video>
             
-            <!-- Fallback Iframe Player (Used if native stream fails) -->
-            <iframe id="iframePlayer" style="display: none; width: 100%; height: 100%; border: none;" allowfullscreen allow="autoplay"></iframe>
-            
-            <div class="player-controls" id="playerLoader">
-                    <i class="fa-solid fa-circle-notch fa-spin"></i> Loading High Quality Stream...
-                </div>
+            <!-- Artwork -->
+            <div class="music-artwork-container">
+                <img id="musicArtwork" src="" alt="Album Art">
             </div>
-            <div class="video-info">
-                <h2 id="playerTitle">Video Title</h2>
-                <div class="channel-info">
-                    <img id="playerChannelAvatar" src="" alt="Channel">
-                    <span id="playerChannelName">Channel Name</span>
-                    <span id="playerViews" class="views">0 views</span>
-                </div>
-                <div class="description-box collapsed" id="descBox" onclick="this.classList.toggle('collapsed')">
-                    <p id="playerDescription"></p>
-                    <span class="show-more-text">...more</span>
+            
+            <!-- Hidden Media Players for Audio -->
+            <video id="nativePlayer" playsinline style="opacity: 0; position: absolute; width: 1px; height: 1px; pointer-events: none;"></video>
+            <iframe id="iframePlayer" style="display: none; opacity: 0; position: absolute; width: 1px; height: 1px; pointer-events: none;" allow="autoplay"></iframe>
+
+            <div class="player-controls" id="playerLoader" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100;">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Loading...
+            </div>
+
+            <!-- Glassmorphic Controls Bottom Sheet -->
+            <div class="music-controls-sheet">
+                <div class="drag-handle"></div>
+                
+                <div class="music-info">
+                    <h2 id="playerTitle">Song Title</h2>
+                    <p id="playerChannelName">Artist Name</p>
                 </div>
                 
-                <!-- Related Videos Section -->
-                <div class="related-videos-section" style="padding: 1.5rem; border-top: 1px solid var(--glass-border);">
-                    <h3 style="margin-bottom: 1rem; font-size: 1.2rem;">Related Videos</h3>
-                    <div id="relatedVideos" class="video-grid" style="grid-template-columns: 1fr;">
-                        <!-- Populated by JS -->
+                <div class="progress-container">
+                    <div class="progress-bar-bg" id="progressBarBg">
+                        <div class="progress-bar-fill" id="progressBarFill"></div>
+                    </div>
+                    <div class="time-info">
+                        <span id="currentTime">0:00</span>
+                        <span id="totalTime">0:00</span>
                     </div>
                 </div>
+                
+                <div class="music-actions">
+                    <button id="shuffleBtn"><i class="fa-solid fa-shuffle"></i></button>
+                    <button id="prevBtn"><i class="fa-solid fa-backward-step"></i></button>
+                    <button id="playPauseBtn" class="play-btn-large"><i class="fa-solid fa-play"></i></button>
+                    <button id="nextBtn"><i class="fa-solid fa-forward-step"></i></button>
+                    <button id="repeatBtn"><i class="fa-solid fa-repeat"></i></button>
+                </div>
+                
+                <div class="music-bottom-actions">
+                    <button id="playlistBtn"><i class="fa-solid fa-bars"></i></button>
+                    <button id="shareBtn"><i class="fa-solid fa-arrow-up-from-bracket"></i></button>
+                </div>
+            </div>
+            
+            <!-- Hidden legacy elements so JS doesn't break -->
+            <div style="display: none;">
+                <button id="pipBtn"></button>
+                <img id="playerChannelAvatar" src="">
+                <span id="playerViews"></span>
+                <p id="playerDescription"></p>
+                <div id="descBox"></div>
+                <div id="relatedVideos"></div>
             </div>
         </div>
     </div>

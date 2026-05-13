@@ -684,6 +684,313 @@ h2#sectionTitle {
     background: rgba(255,255,255,0.2);
 }
 
+/* --- Music Feed App UI --- */
+.vertical-sidebar {
+    width: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 2rem;
+    background: transparent;
+    border-right: none;
+}
+.vertical-sidebar .nav-item {
+    transform: rotate(-90deg);
+    margin: 2rem 0;
+    white-space: nowrap;
+    width: auto;
+    justify-content: center;
+    border-radius: 20px;
+    padding: 8px 16px;
+    color: var(--text-secondary);
+}
+.vertical-sidebar .nav-item.active {
+    background: transparent;
+    color: var(--text-primary);
+    font-weight: 700;
+}
+.sidebar-brand-text {
+    transform: rotate(-90deg);
+    white-space: nowrap;
+    margin-top: auto;
+    margin-bottom: 6rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 2px;
+    font-size: 0.9rem;
+}
+
+.music-feed-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding-bottom: 5rem;
+}
+
+.music-section-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-top: -1rem;
+}
+
+.featured-scroll {
+    display: flex;
+    overflow-x: auto;
+    gap: 1.5rem;
+    padding-bottom: 1rem;
+    scroll-snap-type: x mandatory;
+}
+.featured-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.featured-card {
+    min-width: 280px;
+    height: 380px;
+    border-radius: 24px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    scroll-snap-align: start;
+    cursor: pointer;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    transition: transform 0.3s;
+}
+.featured-card:hover {
+    transform: translateY(-5px);
+}
+.featured-card::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 60%;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+}
+.featured-card-info {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 2;
+}
+.featured-card-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.featured-card-artist {
+    font-size: 1rem;
+    color: #ddd;
+}
+.featured-play-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 45px; height: 45px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    color: black;
+    font-size: 1.2rem;
+    z-index: 2;
+}
+
+.vertical-music-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.music-list-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 10px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.music-list-item:hover {
+    background: var(--bg-hover);
+}
+.music-list-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+.music-list-info {
+    flex: 1;
+}
+.music-list-title {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.music-list-artist {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+.music-list-duration {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    padding-right: 10px;
+}
+
+/* --- Music Player Full Screen UI --- */
+.music-player-container {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg-dark);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.music-player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    padding-top: env(safe-area-inset-top, 2rem);
+    z-index: 10;
+}
+
+#musicPlayerHeaderTitle {
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 1px;
+}
+
+.music-artwork-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    padding-bottom: 300px; /* Leave space for bottom sheet */
+}
+
+#musicArtwork {
+    width: 100%;
+    max-width: 350px;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    transition: transform 0.3s ease;
+}
+
+.music-controls-sheet {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 30px 30px 0 0;
+    padding: 2rem;
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.drag-handle {
+    width: 40px;
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
+    margin: 0 auto 2rem auto;
+}
+
+.music-info {
+    text-align: left;
+    margin-bottom: 2rem;
+}
+.music-info h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.music-info p {
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.progress-container {
+    margin-bottom: 2rem;
+}
+.progress-bar-bg {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+.progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: white;
+    border-radius: 3px;
+}
+.time-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.music-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+.music-actions button {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+.music-actions button:hover {
+    color: var(--accent);
+}
+.play-btn-large {
+    width: 70px;
+    height: 70px;
+    background: white !important;
+    color: black !important;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8rem !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+.music-bottom-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-secondary);
+}
+.music-bottom-actions button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .logo span {
