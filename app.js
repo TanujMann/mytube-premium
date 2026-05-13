@@ -683,6 +683,10 @@ async function openVideo(videoId, title, uploader, thumbnail) {
         musicArtwork.src = 'icon.png';
     }
     
+    // Default to showing custom controls
+    document.getElementById('playerProgress').style.display = 'block';
+    document.getElementById('playerActions').style.display = 'flex';
+    
     // Reset Progress Bar
     document.getElementById('progressBarFill').style.width = '0%';
     document.getElementById('currentTime').textContent = '0:00';
@@ -791,6 +795,8 @@ async function openVideo(videoId, title, uploader, thumbnail) {
         // Fallback to Iframe Player
         nativePlayer.style.display = 'none';
         musicArtwork.style.display = 'none';
+        document.getElementById('playerProgress').style.display = 'none';
+        document.getElementById('playerActions').style.display = 'none';
         iframePlayer.style.display = 'block';
         pipBtn.style.display = 'none'; // Hide PiP because iOS blocks it for iframes
         // Add playsinline=1 so iOS allows autoplay in the iframe

@@ -909,8 +909,8 @@ h2#sectionTitle {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 2rem;
-    padding-bottom: 250px; /* Reduced from 300px so it fits better */
+    padding: 1rem 2rem;
+    min-height: 0; /* allows shrinking */
 }
 
 #musicArtwork, #nativePlayer {
@@ -924,8 +924,7 @@ h2#sectionTitle {
 }
 
 .music-controls-sheet {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
+    position: relative; /* Fixed overlap issue */
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -934,6 +933,7 @@ h2#sectionTitle {
     padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid rgba(255,255,255,0.1);
     color: white;
+    flex-shrink: 0;
 }
 
 .drag-handle {
