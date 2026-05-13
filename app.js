@@ -310,6 +310,7 @@ async function loadTrending(isPersonalized = true) {
     musicList.innerHTML = '';
     loader.style.display = 'block';
 
+    let ytErrorMsg = null;
     try {
         if (YT_API_KEY) {
             try {
@@ -318,7 +319,7 @@ async function loadTrending(isPersonalized = true) {
                     // Personalized search based on top artist and language
                     let searchQuery = '';
                     if(topArtist) searchQuery += topArtist + ' ';
-                    searchQuery += customLang + ' official video -mashup -jukebox -nonstop -"best of" -collection -mix -shorts -short';
+                    searchQuery += customLang + ' official video -shorts -short';
                     
                     apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&videoCategoryId=10&maxResults=30&key=${YT_API_KEY}`;
                     
@@ -374,6 +375,7 @@ async function loadTrending(isPersonalized = true) {
                 }
             } catch (ytErr) {
                 console.warn("YouTube API trending failed, falling back to Piped", ytErr);
+                ytErrorMsg = ytErr.message;
             }
         }
 
@@ -384,7 +386,7 @@ async function loadTrending(isPersonalized = true) {
         if (topArtist || customLang !== 'English') {
             let searchQuery = '';
             if(topArtist) searchQuery += topArtist + ' ';
-            searchQuery += customLang + ' official music -mashup -jukebox -nonstop -mix -shorts -short';
+            searchQuery += customLang + ' official music -shorts -short';
             response = await fetchApi(`/search?q=${encodeURIComponent(searchQuery)}&filter=music_songs`);
             const data = await response.json();
             renderVideos(data.items);
@@ -396,7 +398,8 @@ async function loadTrending(isPersonalized = true) {
         
     } catch (err) {
         console.error("Error fetching trending", err);
-        musicList.innerHTML = '<p>Error loading videos. Please try again later.</p>';
+        const displayMsg = ytErrorMsg ? `YouTube API Error: ${ytErrorMsg}` : 'Error loading videos. Please try again later.';
+        musicList.innerHTML = `<p style="color: #666; text-align: center; padding: 2rem;">${displayMsg}</p>`;
     } finally {
         loader.style.display = 'none';
         
